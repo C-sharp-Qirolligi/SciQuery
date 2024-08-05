@@ -12,7 +12,7 @@ using SciQuery.Infrastructure.Persistance.DbContext;
 namespace SciQuery.Infrastructure.Migrations
 {
     [DbContext(typeof(SciQueryDbContext))]
-    [Migration("20240801123302_InitialCreate")]
+    [Migration("20240805111045_Initial-Create")]
     partial class InitialCreate
     {
         /// <inheritdoc />
