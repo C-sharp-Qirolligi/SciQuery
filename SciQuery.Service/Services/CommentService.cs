@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
+using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.Interfaces;
@@ -14,7 +15,12 @@ public class CommentService(SciQueryDbContext context, IMapper mapper) : ICommen
 
     public async Task<CommentDto> GetCommentByIdAsync(int id)
     {
-        var comment = await _context.Comments.FindAsync(id);
+        var comment = await _context.Comments
+            .Include(a => a.User)
+            .AsNoTracking()
+            .AsSplitQuery() 
+            .FirstOrDefaultAsync(a => a.Id == id)
+            ?? throw new EntityNotFoundException($"Comment with id : {id} is not found!");
         if (comment == null)
         {
             return null;

@@ -18,8 +18,9 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerS
     public async Task<AnswerDto> GetByIdAsync(int id)
     {
         var answer = await _context.Answers
-            //.Include(a => a.User)
+            .Include(a => a.User)
             .Include(a => a.Question)
+            .Include(a => a.Comments)
             .Include(a => a.Votes)
             .AsNoTracking()
             .AsSplitQuery()
@@ -32,7 +33,7 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerS
     public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId)
     {
         var answers = await _context.Answers
-            //.Include(a => a.User)
+            .Include(a => a.User)
             .Include(a => a.Question)
             .Include(a => a.Votes)
             .Where(a => a.QuestionId == questionId)
@@ -66,9 +67,13 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerS
 
     public async Task DeleteAsync(int id)
     {
-        var answer = await _context.Answers.FindAsync(id)
+        var answer = await _context.Answers
+            .Include(a => a.Comments)
+            .AsNoTracking()
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(a => a.Id == id)
             ?? throw new EntityNotFoundException($"Answer with id : {id} is not found!");
-
+        
         _context.Answers.Remove(answer);
         await _context.SaveChangesAsync();
     }

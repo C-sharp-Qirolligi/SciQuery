@@ -78,7 +78,7 @@ public class SciQueryDbContext(DbContextOptions<SciQueryDbContext> options,
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+        optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnectionJavlon"));
         base.OnConfiguring(optionsBuilder);
     }
 }

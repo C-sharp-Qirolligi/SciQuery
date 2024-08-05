@@ -4,9 +4,11 @@ using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Service.DTOs.Question;
+using SciQuery.Service.DTOs.Tag;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
+using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
@@ -15,13 +17,76 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
     private readonly SciQueryDbContext _context = dbContext;
     private readonly IMapper _mapper = mapper;
 
-    public async Task<PaginatedList<QuestionDto>> GetAllAsync()
+    public async Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(QuestionQueryParameters queryParams)
     {
-        var questions = await _context.Questions
-            .Include(q => q.User)
-            .ToPaginatedList<QuestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        if(queryParams.Tags == null || queryParams.Tags.Count == 0)
+        {
+            throw new Exception();
+        }
+
+        var result = _context.Tags
+            .Where(x => queryParams.Tags.Contains(x.Name))
+            .Join(_context.QuestionTags,
+                t => t.Id,
+                qt => qt.TagId,
+                (t, qt) => new { qt.QuestionId })
+            .GroupBy(q => q.QuestionId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => new { QuestionId = g.Key, Count = g.Count() });
+
+        var questions = await result
+            .Join(_context.Questions,
+                  r => r.QuestionId,
+                  q => q.Id,
+                  (r, q) => q)
+            .AsNoTracking()
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider,1,15);
 
         return questions;
+    }
+    public async Task<PaginatedList<ForEasyQestionDto>> GetAllAsync(QuestionQueryParameters queryParams)
+    {
+        var query = _context.Questions
+        .Include(q => q.User)
+        .Include(q => q.Answers)
+        .Include(q => q.Votes)
+        .Include(q => q.QuestionTags)
+        .ThenInclude(qt => qt.Tag)
+        .AsNoTracking()
+        .AsQueryable();
+
+        if (!string.IsNullOrEmpty(queryParams.Search))
+        {
+            query = query.Where(q => q.Title.Contains(queryParams.Search) 
+                    || q.Body.Contains(queryParams.Search));
+        }
+
+        if (queryParams.LastDate.HasValue)
+        {
+            query = query.Where(q => q.CreatedDate <= queryParams.LastDate.Value);
+        }
+
+        if (queryParams.AnswerMaxCount.HasValue)
+        {
+            query = query.Where(q => q.Answers.Count <= queryParams.AnswerMaxCount.Value);
+        }
+
+        if (queryParams.AnswerMinCount.HasValue)
+        {
+            query = query.Where(q => q.Answers.Count >= queryParams.AnswerMinCount.Value);
+        }
+
+        if (queryParams.NewAsc.HasValue && queryParams.NewAsc == true)
+        {
+            query = query.OrderByDescending(x => x.UpdatedDate);
+        }
+        else
+        {
+            query = query.OrderBy(x => x.UpdatedDate);
+        }
+
+        var result =  await query.ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        return result;
     }
     public async Task<QuestionDto> GetByIdAsync(int id)
     {

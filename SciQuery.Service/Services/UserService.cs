@@ -23,10 +23,10 @@ public class UserService(UserManager<User> user,IMapper mapper) : IUserService
             .ToPaginatedList<UserDto, User>(_mapper.ConfigurationProvider,1,15);
         return users;
     }
-    public async Task<UserDto> GetByIdAsync(int id)
+    public async Task<UserDto> GetByIdAsync(string id)
     {
         var user = await _userManager
-            .FindByIdAsync(id.ToString()) 
+            .FindByIdAsync(id) 
             ?? throw new EntityNotFoundException($"User with id : {id} is not found!");
         UserDto userDto = _mapper.Map<UserDto>(user);
 

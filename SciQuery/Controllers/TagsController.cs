@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SciQuery.Domain.Entities;
 using SciQuery.Service.DTOs.Tag;
 using SciQuery.Service.Interfaces;
+using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Controllers
 {
@@ -13,9 +14,9 @@ namespace SciQuery.Controllers
         private readonly ITagService _tagService = tagService;
 
         [HttpGet]
-        public async Task<IActionResult> GetAllTags()
+        public async Task<IActionResult> GetAllTags([FromQuery] TagQueryParameters queryParameters)
         {
-            var tags = await _tagService.GetAllTagsAsync();
+            var tags = await _tagService.GetAllTagsAsync(queryParameters);
             return Ok(tags);
         }
 

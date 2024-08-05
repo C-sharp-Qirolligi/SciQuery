@@ -12,7 +12,7 @@ namespace SciQuery.Controllers
         private readonly IUserService _userService = userService;
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetUserById(int id)
+        public async Task<IActionResult> GetUserById(string id)
         {
             var user = await _userService.GetByIdAsync(id);
             if (user == null)

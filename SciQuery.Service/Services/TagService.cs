@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using SciQuery.Domain.Entities;
 using SciQuery.Infrastructure.Persistance.DbContext;
+using SciQuery.Service.DTOs.Question;
 using SciQuery.Service.DTOs.Tag;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
+using SciQuery.Service.QueryParams;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SciQuery.Service.Services;
 
@@ -16,13 +18,43 @@ public class TagService(SciQueryDbContext context , IMapper mapper) : ITagServic
     private readonly SciQueryDbContext _context = context;
     private readonly IMapper _mapper = mapper;
 
-    public async Task<PaginatedList<TagDto>> GetAllTagsAsync()
+    public async Task<PaginatedList<TagDto>> GetAllTagsAsync(TagQueryParameters queryParams)
     {
-        var tags = await _context.Tags
+        var tags = _context.Tags
             .Include(t => t.QuestionTags)
             .AsNoTracking()
-            .ToPaginatedList<TagDto, Tag>(_mapper.ConfigurationProvider, 1, 15);
-        return tags;
+            .AsSplitQuery();
+
+        if (!string.IsNullOrEmpty(queryParams.Search))
+        {
+            var search = queryParams.Search.ToLower();
+            tags = tags.Where(t => t.Name.ToLower().Contains(search));
+        }
+
+        // `Popular` bo'yicha tartiblash
+        if (queryParams.Popular.HasValue && queryParams.Popular == true)
+        {
+            tags = tags.OrderByDescending(t => t.QuestionTags.Count());
+        }
+        else
+        {
+            tags = tags.OrderBy(t => t.QuestionTags.Count());
+        }
+
+        if (queryParams.SortDescending.HasValue)
+        {
+            if (queryParams.SortDescending.Value)
+            {
+                tags = tags.OrderByDescending(t => t.Name); // Alifbo tartibida kamayish
+            }
+            else
+            {
+                tags = tags.OrderBy(t => t.Name); // Alifbo tartibida oshish
+            }
+        }
+
+        var result = await tags.ToPaginatedList<TagDto, Tag>(_mapper.ConfigurationProvider, 1, 15);
+        return result;
     }
 
     public async Task<Tag> GetTagByIdAsync(int id)
@@ -30,13 +62,14 @@ public class TagService(SciQueryDbContext context , IMapper mapper) : ITagServic
         return await _context.Tags.FindAsync(id);
     }
 
-    public async Task<Tag> CreateTagAsync(TagForCreateDto tag)
+    public async Task<TagDto> CreateTagAsync(TagForCreateDto tagForCreatedDto)
     {
-        var entity = _mapper.Map<Tag>(tag); 
+        var entity = _mapper.Map<Tag>(tagForCreatedDto); 
 
-        _context.Tags.Add(entity);
+        var result = _context.Tags.Add(entity).Entity;
         await _context.SaveChangesAsync();
-        return entity;
+
+        return _mapper.Map<TagDto>(result); ;
     }
 
     public async Task<Tag> UpdateTagAsync(int id, Tag tag)
