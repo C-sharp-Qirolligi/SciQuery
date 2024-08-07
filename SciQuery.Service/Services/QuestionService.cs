@@ -106,38 +106,6 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
             ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");
     }
 
-    //public async Task<QuestionDto> CreateAsync(QuestionForCreateDto questionCreateDto)
-    //{
-    //    var question = _mapper.Map<Question>(questionCreateDto);
-    //    question.CreatedDate = DateTime.Now;
-    //    question.UpdatedDate = DateTime.Now;
-
-    //    var created = _context.Questions.Add(question).Entity;
-    //    await _context.SaveChangesAsync();
-
-    //    foreach (var tagName in questionCreateDto.Tags)
-    //    {
-    //        var tag = await _context.Tags.SingleOrDefaultAsync(t => t.Name == tagName);
-
-    //        if (tag == null)
-    //        {
-    //            tag = new Tag { Name = tagName };
-    //            _context.Tags.Add(tag);
-    //            await _context.SaveChangesAsync();
-    //        }
-
-    //        var questionTag = new QuestionTag
-    //        {
-    //            QuestionId = question.Id,
-    //            TagId = tag.Id
-    //        };
-
-    //        _context.QuestionTags.Add(questionTag);
-    //    }
-
-    //    return _mapper.Map<QuestionDto>(created);
-    //}
-
     public async Task<QuestionDto> CreateAsync(QuestionForCreateDto questionCreateDto)
     {
         // Question ob'ektini yaratish va xaritalash
@@ -199,14 +167,17 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<bool>  DeleteAsync(int id)
     {
-        var question = await _context.Questions.FindAsync(id)
-            ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");
-
-
+        var question = await _context.Questions.FirstOrDefaultAsync(x => x.Id == id);
+        if(question == null)
+        {
+            return false;
+        }
+        
         _context.Questions.Remove(question);
         await _context.SaveChangesAsync();
+        return true;
     }
 }
 

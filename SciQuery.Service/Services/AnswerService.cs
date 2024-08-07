@@ -37,8 +37,10 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerS
             .Include(a => a.Question)
             .Include(a => a.Votes)
             .Where(a => a.QuestionId == questionId)
+            .OrderBy(a => a.Id)
             .AsNoTracking()
             .AsSplitQuery()
+            .AsSingleQuery()
             .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, 1, 15);
 
         return answers;

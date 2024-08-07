@@ -11,8 +11,8 @@ namespace SciQuery.Controllers
     {
         private readonly IVoteService _voteService = voteService;
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetVoteByUserId(int id)
+        [HttpGet("user/{id}")]
+        public async Task<IActionResult> GetVoteByUserId(string id)
         {
             var vote = await _voteService.GetVoteByUserIdAsync(id);
             if (vote == null)

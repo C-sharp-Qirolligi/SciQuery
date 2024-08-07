@@ -60,6 +60,18 @@ public class SciQueryDbContext(DbContextOptions<SciQueryDbContext> options,
         });
 
         builder.Entity<Comment>().ToTable(nameof(Comment));
+       
+        builder.Entity<Comment>()
+           .HasOne(c => c.Question)
+           .WithMany(q => q.Comments)
+           .HasForeignKey(c => c.QuestionId)
+           .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Comment>()
+            .HasOne(c => c.Answer)
+            .WithMany(a => a.Comments)
+            .HasForeignKey(c => c.AnswerId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<Answer>().ToTable(nameof(Answer));
         

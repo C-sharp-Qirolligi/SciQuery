@@ -25,7 +25,7 @@ public class AccountService(UserManager<User> userManager,IConfiguration configu
 
         if (name is not null)
         {
-            throw new AuthenticationException($"User not found {model.UserName}");
+            throw new AuthenticationException($"Already exist user name");
         }
 
         var user = new User()

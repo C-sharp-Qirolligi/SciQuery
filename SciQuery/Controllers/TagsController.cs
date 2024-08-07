@@ -43,22 +43,6 @@ namespace SciQuery.Controllers
             return CreatedAtAction(nameof(GetTagById), new { id = createdTag.Id }, createdTag);
         }
 
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateTag(int id, [FromBody] TagForCreateAndUpdateDto tag)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    var updatedTag = await _tagService.UpdateTagAsync(id, tag);
-        //    if (updatedTag == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return Ok(updatedTag);
-        //}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTag(int id, [FromBody] TagForCreateAndUpdateDto tagDto)
         {
