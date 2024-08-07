@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
@@ -12,10 +13,13 @@ using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
-public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQuestionService
+public class QuestionService(SciQueryDbContext dbContext,IMapper mapper,IAnswerService answerService,ICommentService commentService) : IQuestionService
 {
     private readonly SciQueryDbContext _context = dbContext;
     private readonly IMapper _mapper = mapper;
+    private readonly IAnswerService _answerService = answerService;
+    private readonly ICommentService _commentService  = commentService;
+
 
     public async Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(QuestionQueryParameters queryParams)
     {
@@ -167,16 +171,39 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
         await _context.SaveChangesAsync();
     }
 
-    public async Task<bool>  DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var question = await _context.Questions.FirstOrDefaultAsync(x => x.Id == id);
-        if(question == null)
+        var question = await _context.Questions.Include(c => c.Votes).Include(c => c.Comments).FirstOrDefaultAsync(x => x.Id == id);
+        if (question == null)
         {
             return false;
         }
-        
+
+        var answers = _context.Answers.Where(a => a.QuestionId == id).Include(c => c.Comments)
+            .Include(c => c.Votes).ToList();
+
+        foreach (var i in answers)
+        {
+            _context.Comments.RemoveRange(i.Comments);
+        }
+
+        foreach (var i in answers)
+        {
+            _context.Votes.RemoveRange(i.Votes);
+        }
+        await _context.SaveChangesAsync();
+
+        _context.Answers.RemoveRange(answers);
+        await _context.SaveChangesAsync();
+
+
+        _context.Comments.RemoveRange(question.Comments);
+        _context.Votes.RemoveRange(question.Votes);
+        await _context.SaveChangesAsync();
+
         _context.Questions.Remove(question);
         await _context.SaveChangesAsync();
+
         return true;
     }
 }
