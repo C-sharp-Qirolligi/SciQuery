@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
+using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Service.DTOs.Question;
 using SciQuery.Service.DTOs.Tag;
@@ -37,6 +38,7 @@ public class TagService(SciQueryDbContext context , IMapper mapper) : ITagServic
             tags = tags.OrderByDescending(t => t.QuestionTags.Count());
         }
         else
+        {}
         {
             tags = tags.OrderBy(t => t.QuestionTags.Count());
         }
@@ -57,33 +59,53 @@ public class TagService(SciQueryDbContext context , IMapper mapper) : ITagServic
         return result;
     }
 
-    public async Task<Tag> GetTagByIdAsync(int id)
+
+    public async Task<TagDto> GetTagByIdAsync(int id)
     {
-        return await _context.Tags.FindAsync(id);
+            var tag = await _context.Tags
+                .Include(q => q.QuestionTags)
+                .ThenInclude(qt => qt.Question)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            var dto = _mapper.Map<TagDto>(tag);
+
+            return dto 
+                 ?? throw new EntityNotFoundException($"Tag with id : {id} is not found!");
     }
 
-    public async Task<TagDto> CreateTagAsync(TagForCreateDto tagForCreatedDto)
+    public async Task<TagDto> CreateTagAsync(TagForCreateAndUpdateDto tagForCreatedDto)
     {
-        var entity = _mapper.Map<Tag>(tagForCreatedDto); 
+        var existingTag = await _context.Tags
+        .FirstOrDefaultAsync(t => t.Name == tagForCreatedDto.Name);
+        if (existingTag != null)
+        {
+            throw new InvalidOperationException("Tag already exists.");
+        }
+
+        var entity = _mapper.Map<Tag>(tagForCreatedDto);
 
         var result = _context.Tags.Add(entity).Entity;
         await _context.SaveChangesAsync();
-
-        return _mapper.Map<TagDto>(result); ;
+                
+        return _mapper.Map<TagDto>(result);
     }
-
-    public async Task<Tag> UpdateTagAsync(int id, Tag tag)
+    public async Task<TagDto> UpdateTagAsync(int id, TagForCreateAndUpdateDto tagDto)
     {
-        var existingTag = await _context.Tags.FindAsync(id);
-        if (existingTag == null)
+        var tag = await _context.Tags
+                 .Include(q => q.QuestionTags)
+                 .ThenInclude(qt => qt.Question)
+                 .FirstOrDefaultAsync(t => t.Id == id);
+        if (tag == null)
         {
-            return null;
+            return null; 
         }
 
-        existingTag.Name = tag.Name;
+        tag.Name = tagDto.Name;
 
+        _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
-        return existingTag;
+
+        return _mapper.Map<TagDto>(tag);
     }
 
     public async Task<bool> DeleteTagAsync(int id)

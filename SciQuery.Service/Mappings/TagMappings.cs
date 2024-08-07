@@ -13,6 +13,6 @@ public class TagMappings : Profile
             .ForMember(dest => dest.Questions, opt => opt
             .MapFrom(src => src.QuestionTags.Select(qt => qt.Question.Id)
             .Count()));
-        CreateMap<TagForCreateDto, Tag>();
+        CreateMap<TagForCreateAndUpdateDto, Tag>();
     }
 }

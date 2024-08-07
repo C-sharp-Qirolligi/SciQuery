@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
+using SciQuery.Domain.UserModels;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Service.DTOs.Vote;
 using SciQuery.Service.Interfaces;
@@ -26,10 +27,11 @@ public class VoteService(SciQueryDbContext context, IMapper mapper) : IVoteServi
             .ToPaginatedList<VoteDto, Vote>(_mapper.ConfigurationProvider);
         return votes;
     }
-    public async Task<PaginatedList<VoteDto>> GetVoteByUserIdAsync(int id)
+    public async Task<PaginatedList<VoteDto>> GetVoteByUserIdAsync(string userId)
     {
         var votes = await _context.Votes
             .Include(x => x.User)
+            .Where(u => u.UserId == userId)
             .AsNoTracking()
             .AsSplitQuery()
             .ToPaginatedList<VoteDto, Vote>(_mapper.ConfigurationProvider);

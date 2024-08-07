@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
@@ -12,10 +13,13 @@ using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
-public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQuestionService
+public class QuestionService(SciQueryDbContext dbContext,IMapper mapper,IAnswerService answerService,ICommentService commentService) : IQuestionService
 {
     private readonly SciQueryDbContext _context = dbContext;
     private readonly IMapper _mapper = mapper;
+    private readonly IAnswerService _answerService = answerService;
+    private readonly ICommentService _commentService  = commentService;
+
 
     public async Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(QuestionQueryParameters queryParams)
     {
@@ -108,34 +112,51 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
 
     public async Task<QuestionDto> CreateAsync(QuestionForCreateDto questionCreateDto)
     {
+        // Question ob'ektini yaratish va xaritalash
         var question = _mapper.Map<Question>(questionCreateDto);
         question.CreatedDate = DateTime.Now;
         question.UpdatedDate = DateTime.Now;
 
-        var created = _context.Questions.Add(question).Entity;
+        // Question ob'ektini saqlash
+        _context.Questions.Add(question);
         await _context.SaveChangesAsync();
 
+        // Teglar va ularning bog'lanishlarini qo'shish
+        var tags = new List<Tag>();
         foreach (var tagName in questionCreateDto.Tags)
         {
             var tag = await _context.Tags.SingleOrDefaultAsync(t => t.Name == tagName);
-            
+
             if (tag == null)
             {
                 tag = new Tag { Name = tagName };
-                _context.Tags.Add(tag);
-                await _context.SaveChangesAsync();
+                tags.Add(tag);
             }
-
-            var questionTag = new QuestionTag
+            else
             {
-                QuestionId = question.Id,
-                TagId = tag.Id
-            };
-
-            _context.QuestionTags.Add(questionTag);
+                tags.Add(tag);
+            }
         }
 
-        return _mapper.Map<QuestionDto>(created);
+        // Teglarni birgalikda qo'shish
+        if (tags.Any(t => t.Id == 0)) // Yangi taglar mavjud bo'lsa
+        {
+            _context.Tags.AddRange(tags.Where(t => t.Id == 0));
+            await _context.SaveChangesAsync();
+        }
+
+        // QuestionTag bog'lanishlarini yaratish
+        var questionTags = tags.Select(t => new QuestionTag
+        {
+            QuestionId = question.Id,
+            TagId = t.Id
+        }).ToList();
+
+        _context.QuestionTags.AddRange(questionTags);
+        await _context.SaveChangesAsync();
+
+        // Yangi yaratilgan QuestionDto qaytarish
+        return _mapper.Map<QuestionDto>(question);
     }
 
     public async Task UpdateAsync(int id, QuestionForUpdateDto questionUpdateDto)
@@ -150,14 +171,40 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
-        var question = await _context.Questions.FindAsync(id)
-            ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");
+        var question = await _context.Questions.Include(c => c.Votes).Include(c => c.Comments).FirstOrDefaultAsync(x => x.Id == id);
+        if (question == null)
+        {
+            return false;
+        }
 
+        var answers = _context.Answers.Where(a => a.QuestionId == id).Include(c => c.Comments)
+            .Include(c => c.Votes).ToList();
+
+        foreach (var i in answers)
+        {
+            _context.Comments.RemoveRange(i.Comments);
+        }
+
+        foreach (var i in answers)
+        {
+            _context.Votes.RemoveRange(i.Votes);
+        }
+        await _context.SaveChangesAsync();
+
+        _context.Answers.RemoveRange(answers);
+        await _context.SaveChangesAsync();
+
+
+        _context.Comments.RemoveRange(question.Comments);
+        _context.Votes.RemoveRange(question.Votes);
+        await _context.SaveChangesAsync();
 
         _context.Questions.Remove(question);
         await _context.SaveChangesAsync();
+
+        return true;
     }
 }
 

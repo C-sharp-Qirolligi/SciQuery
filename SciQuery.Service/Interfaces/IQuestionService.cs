@@ -11,7 +11,7 @@ public interface IQuestionService
     Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(QuestionQueryParameters queryParams);
     Task<PaginatedList<ForEasyQestionDto>> GetAllAsync(QuestionQueryParameters queryParams);
     Task<QuestionDto> GetByIdAsync(int id);
-    Task<QuestionDto> CreateAsync(QuestionForCreateDto question);   
+    Task<QuestionDto> CreateAsync(QuestionForCreateDto questionDto);   
     Task UpdateAsync(int id,QuestionForUpdateDto question);
-    Task DeleteAsync(int id);
+    Task<bool> DeleteAsync(int id);
 }

@@ -32,7 +32,7 @@ namespace SciQuery.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTag([FromBody] TagForCreateDto tag)
+        public async Task<IActionResult> CreateTag([FromBody] TagForCreateAndUpdateDto tag)
         {
             if (!ModelState.IsValid)
             {
@@ -44,14 +44,14 @@ namespace SciQuery.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTag(int id, [FromBody] Tag tag)
+        public async Task<IActionResult> UpdateTag(int id, [FromBody] TagForCreateAndUpdateDto tagDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var updatedTag = await _tagService.UpdateTagAsync(id, tag);
+            var updatedTag = await _tagService.UpdateTagAsync(id, tagDto);
             if (updatedTag == null)
             {
                 return NotFound();

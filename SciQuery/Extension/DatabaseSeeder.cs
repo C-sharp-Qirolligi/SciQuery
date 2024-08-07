@@ -101,12 +101,19 @@ public class DatabaseSeeder
         var commentFaker = new Faker<Comment>()
             .RuleFor(c => c.UserId, f => f.PickRandom(userIds))
             .RuleFor(c => c.QuestionId, f => f.PickRandom(questionIds))
+            .RuleFor(c => c.Body, f => f.Lorem.Paragraphs())
+            .RuleFor(c => c.CreatedDate, f => f.Date.Past());
+        
+        var commentFakerAnswer = new Faker<Comment>()
+            .RuleFor(c => c.UserId, f => f.PickRandom(userIds))
             .RuleFor(c => c.AnswerId, f => f.PickRandom(answerIds))
             .RuleFor(c => c.Body, f => f.Lorem.Paragraphs())
             .RuleFor(c => c.CreatedDate, f => f.Date.Past());
 
         var comments = commentFaker.Generate(100); // 100 comments
+        var commentsAnswer = commentFakerAnswer.Generate(100); // 100 comments
         context.Comments.AddRange(comments);
+        context.Comments.AddRange(commentsAnswer);
     }
 
     private static void AddTags(SciQueryDbContext context)

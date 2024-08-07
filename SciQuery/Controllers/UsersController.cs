@@ -47,7 +47,7 @@ namespace SciQuery.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserForUpdatesDto userUpdateDto)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UserForUpdatesDto userUpdateDto)
         {
             if (!ModelState.IsValid)
             {
@@ -60,15 +60,32 @@ namespace SciQuery.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(string id)
         {
-            var result = await _userService.DeleteAsync(id);
-            if (!result)
-            {
-                return NotFound();
-            }
+            //var result = await _userService.DeleteAsync(id);
+            //if (!result)
+            //{
+            //    return NotFound();
+            //}
 
-            return NoContent();
+            //return NoContent();
+            try
+            {
+                var result = await _userService.DeleteAsync(id);
+
+                if (!result)
+                {
+                    return NotFound(); // Foydalanuvchi topilmadi
+                }
+
+                return NoContent(); // O'chirish muvaffaqiyatli
+            }
+            catch (Exception ex)
+            {
+                // Xatolikni loglash
+                // _logger.LogError(ex, "An error occurred while deleting the user.");
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }

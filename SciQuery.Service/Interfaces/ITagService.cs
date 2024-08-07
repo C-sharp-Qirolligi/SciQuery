@@ -8,8 +8,8 @@ namespace SciQuery.Service.Interfaces;
 public interface ITagService
 {
     Task<PaginatedList<TagDto>> GetAllTagsAsync(TagQueryParameters queryParameters);
-    Task<Tag> GetTagByIdAsync(int id);
-    Task<TagDto> CreateTagAsync(TagForCreateDto tag);
-    Task<Tag> UpdateTagAsync(int id, Tag tag);
+    Task<TagDto> GetTagByIdAsync(int id);
+    Task<TagDto> CreateTagAsync(TagForCreateAndUpdateDto tag);
+    Task<TagDto> UpdateTagAsync(int id, TagForCreateAndUpdateDto tag);
     Task<bool> DeleteTagAsync(int id);
 }

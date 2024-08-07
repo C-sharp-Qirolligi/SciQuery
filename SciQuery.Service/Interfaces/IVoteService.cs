@@ -10,7 +10,7 @@ namespace SciQuery.Service.Interfaces
 {
     public interface IVoteService
     {
-        Task<PaginatedList<VoteDto>> GetVoteByUserIdAsync(int id);
+        Task<PaginatedList<VoteDto>> GetVoteByUserIdAsync(string userId);
         Task<PaginatedList<VoteDto>> GetAllVotesByQuestionIdAsync(int questionId);
         Task<PaginatedList<VoteDto>> GetAllVotesByAnswerIdAsync(int answerId);
         Task<VoteDto> CreateVoteAsync(VoteForCreateDto voteCreateDto);
