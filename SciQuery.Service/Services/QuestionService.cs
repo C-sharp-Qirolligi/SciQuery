@@ -92,6 +92,9 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
     {
         var question = await _context.Questions
             .Include(q => q.User)
+            .Include(q => q.Answers)
+            .ThenInclude(a => a.Comments)
+            .Include(a => a.Answers).ThenInclude(a => a.Votes)
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
             .Include(q => q.Comments)
