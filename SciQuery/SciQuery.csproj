@@ -26,8 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Middlewares\" />
-    <Folder Include="Source\Images\UserImages\QuestionImages\" />
+
+    <Folder Include="Source\Images\AnswersImages\" />
+    <Folder Include="Source\Images\QuestionImages\" />
+
   </ItemGroup>
 
 </Project>

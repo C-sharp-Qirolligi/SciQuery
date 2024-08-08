@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
@@ -10,19 +11,17 @@ using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
 
-public class UserService : IUserService
+
+namespace SciQuery.Service.Services;
+
+public class UserService(UserManager<User> user,IMapper mapper, IFileManagingService fileManaging) : IUserService
 {
-    private readonly SciQueryDbContext _context;
-    private readonly UserManager<User> _userManager;
-    private readonly IMapper _mapper;
-
-    public UserService(SciQueryDbContext context ,UserManager<User> userManager, IMapper mapper)
-    {
-        _context = context;
-        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
-        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-    }
-
+    private readonly UserManager<User> _userManager = user 
+        ?? throw new ArgumentNullException(nameof(user));
+    private readonly IMapper _mapper = mapper 
+        ?? throw new ArgumentNullException(nameof(mapper));
+    private readonly IFileManagingService _fileManaging = fileManaging
+       ?? throw new ArgumentNullException(nameof(mapper));
     public async Task<PaginatedList<UserDto>> GetAllAsync()
     {
         var users = await _userManager.Users
@@ -58,6 +57,7 @@ public class UserService : IUserService
         return _mapper.Map<UserDto>(user);
     }
 
+
     public async Task UpdateAsync(string id, UserForUpdatesDto userUpdateDto)
     {
         var user = await _userManager.FindByIdAsync(id)
@@ -72,8 +72,8 @@ public class UserService : IUserService
         {
             throw new InvalidOperationException($"Something wrong with updating user with id : {id}");
         }
-    }
 
+    }
     public async Task<bool> DeleteAsync(string id)
     {
         //var user = await _context.Users
@@ -105,5 +105,11 @@ public class UserService : IUserService
             // _logger.LogError(ex, "Error occurred while deleting user.");
             throw; // Xatolikni yuqoriga qaytarish
         }
+    }
+
+
+    public async Task<string> CreateImage(IFormFile file)
+    {
+        return await _fileManaging.UploadUserImagesAsync(file);
     }
 }

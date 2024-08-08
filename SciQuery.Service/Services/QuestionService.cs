@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
@@ -12,10 +13,14 @@ using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
-public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQuestionService
+public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileManagingService fileManaging) : IQuestionService
 {
-    private readonly SciQueryDbContext _context = dbContext;
-    private readonly IMapper _mapper = mapper;
+    private readonly SciQueryDbContext _context = dbContext
+        ?? throw new ArgumentNullException(nameof(dbContext));
+    private readonly IMapper _mapper = mapper
+        ?? throw new ArgumentNullException(nameof(mapper));
+    private readonly IFileManagingService _fileManaging = fileManaging
+       ?? throw new ArgumentNullException(nameof(mapper));
 
     public async Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(QuestionQueryParameters queryParams)
     {
@@ -185,6 +190,11 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper) : IQues
 
         // Yangi yaratilgan QuestionDto qaytarish
         return _mapper.Map<QuestionDto>(question);
+    }
+
+    public async Task<List<string>> CreateImages(List<IFormFile> files)
+    {
+        return await _fileManaging.UploadQuestionImagesAsync(files);
     }
 
     public async Task UpdateAsync(int id, QuestionForUpdateDto questionUpdateDto)
