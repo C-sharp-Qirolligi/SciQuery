@@ -86,7 +86,7 @@ public class UserService(SciQueryDbContext context,
         try
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id); 
 
             if (user == null)
             {
