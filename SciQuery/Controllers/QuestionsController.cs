@@ -35,55 +35,40 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
         return Ok(questions);
     }
 
-
-    [HttpPost]
-    public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto questionDto)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetQuestionById(int id)
     {
-        questionDto.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new EntityNotFoundException("User does not found!");
-
-
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto question)
+        var question = await _questionService.GetByIdAsync(id);
+        if (question == null)
         {
-            // Foydalanuvchini topish
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                throw new EntityNotFoundException("User does not found!");
-            }
-
-            question.UserId = user.Id;
-
-            // ModelState ni tekshirish
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                // Savol yaratish jarayoni
-                var createdQuestion = await _questionService.CreateAsync(question);
-
-                // Yaratilgan savolni qaytarish
-                return CreatedAtAction(nameof(GetQuestionById),
-                       new { id = createdQuestion.Id },
-                       createdQuestion);
-            }
-            catch (Exception ex)
-            {
-                // Har qanday boshqa xatolar uchun umumiy xatolik javobini qaytarish
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-
+            return NotFound();
         }
-
-        var createdQuestion = await _questionService.CreateAsync(questionDto);
-        return Created(nameof(GetQuestionById), new { createdQuestion });
+        return Ok(question);
     }
 
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto question)
+    {
+        // Foydalanuvchini topish
+        var user = await _userManager.GetUserAsync(User)
+            ?? throw new EntityNotFoundException("User does not found!");
+        
+        question.UserId = user.Id;
+
+        // ModelState ni tekshirish
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        // Savol yaratish jarayoni
+        var createdQuestion = await _questionService.CreateAsync(question);
+
+        // Yaratilgan savolni qaytarish
+        return CreatedAtAction(nameof(GetQuestionById),
+               new { id = createdQuestion.Id }, createdQuestion);
+    }
 
     [HttpPost("UploadImages")]
     public async Task<ActionResult> UploadFile(List<IFormFile> files)
@@ -104,10 +89,15 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
 
         return NoContent();
     }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteQuestion(int id)
     {
-        await _questionService.DeleteAsync(id);
+        var result = await _questionService.DeleteAsync(id);
+        if (!result)
+        {
+            return NotFound();
+        }
 
         return NoContent();
     }
