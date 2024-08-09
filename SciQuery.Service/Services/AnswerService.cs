@@ -10,10 +10,11 @@ using SciQuery.Service.Pagination.PaginatedList;
 
 namespace SciQuery.Service.Services;
 
-public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerService
+public class AnswerService(SciQueryDbContext context, IMapper mapper,ICommentService commentService) : IAnswerService
 {
     private readonly SciQueryDbContext _context = context;
     private readonly IMapper _mapper = mapper;
+    private readonly ICommentService _commentService = commentService;
 
     public async Task<AnswerDto> GetByIdAsync(int id)
     {
@@ -21,7 +22,6 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerS
             .Include(a => a.User)
             .Include(a => a.Question)
             .Include(a => a.Comments)
-            .Include(a => a.Votes)
             .AsNoTracking()
             .AsSplitQuery()
             .FirstOrDefaultAsync(a => a.Id == id)
@@ -35,7 +35,6 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerS
         var answers = await _context.Answers
             .Include(a => a.User)
             .Include(a => a.Question)
-            .Include(a => a.Votes)
             .Where(a => a.QuestionId == questionId)
             .OrderBy(a => a.Id)
             .AsNoTracking()
@@ -70,13 +69,13 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper) : IAnswerS
     public async Task DeleteAsync(int id)
     {
         var answer = await _context.Answers
-            .Include(a => a.Comments)
-            .AsNoTracking()
-            .AsSplitQuery()
             .FirstOrDefaultAsync(a => a.Id == id)
             ?? throw new EntityNotFoundException($"Answer with id : {id} is not found!");
-        
-        _context.Answers.Remove(answer);
+
+        await _commentService.DeleteCommentByPostIdAsync(PostType.Answer, id);
+
+        _context.Answers.Remove(answer);    
+
         await _context.SaveChangesAsync();
     }
 }
