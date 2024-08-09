@@ -1,17 +1,14 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Service.DTOs.Question;
-using SciQuery.Service.DTOs.Tag;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
 using SciQuery.Service.QueryParams;
-using System.Reflection.Metadata.Ecma335;
 
 namespace SciQuery.Service.Services;
 
@@ -110,7 +107,7 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
             .AsNoTracking()
-            .FirstAsync(q => q.Id == id);
+            .FirstOrDefaultAsync(q => q.Id == id) ?? throw new EntityNotFoundException($"Question does not found {id}");
 
         question.Comments = await _context.Comments
             .Where(c => c.Post == PostType.Question && c.PostId == id)

@@ -11,6 +11,7 @@ namespace SciQuery.Service.Mappings
             CreateMap<Comment, CommentDto>();
             CreateMap<CommentForCreateDto, Comment>();
             CreateMap<CommentForUpdateDto, Comment>();
+
         }
     }
 }
