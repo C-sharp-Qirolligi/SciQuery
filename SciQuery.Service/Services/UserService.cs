@@ -88,7 +88,7 @@ public class UserService(UserManager<User> user,IMapper mapper, IFileManagingSer
         try
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Id == id);
+                .FirstOrDefaultAsync(x => x.Id == id); 
 
             if (user == null)
             {
