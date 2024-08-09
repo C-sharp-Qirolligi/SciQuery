@@ -11,7 +11,7 @@ using SciQuery.Service.Pagination.PaginatedList;
 
 namespace SciQuery.Service.Services;
 
-public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManagingService fileManaging) : IAnswerService
+public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManagingService fileManaging, ICommentService commentService) : IAnswerService
 {
     private readonly SciQueryDbContext _context = context
         ??throw new ArgumentNullException(nameof(context));
@@ -19,6 +19,7 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManag
         ?? throw new ArgumentNullException(nameof(mapper));
     private readonly IFileManagingService _fileManaging = fileManaging
        ?? throw new ArgumentNullException(nameof(mapper));
+    private readonly ICommentService _commentService = commentService;
 
     public async Task<AnswerDto> GetByIdAsync(int id)
     {
@@ -26,7 +27,6 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManag
             .Include(a => a.User)
             .Include(a => a.Question)
             .Include(a => a.Comments)
-            .Include(a => a.Votes)
             .AsNoTracking()
             .AsSplitQuery()
             .FirstOrDefaultAsync(a => a.Id == id)
@@ -40,10 +40,11 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManag
         var answers = await _context.Answers
             .Include(a => a.User)
             .Include(a => a.Question)
-            .Include(a => a.Votes)
             .Where(a => a.QuestionId == questionId)
+            .OrderBy(a => a.Id)
             .AsNoTracking()
             .AsSplitQuery()
+            .AsSingleQuery()
             .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, 1, 15);
 
         return answers;
@@ -78,13 +79,13 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManag
     public async Task DeleteAsync(int id)
     {
         var answer = await _context.Answers
-            .Include(a => a.Comments)
-            .AsNoTracking()
-            .AsSplitQuery()
             .FirstOrDefaultAsync(a => a.Id == id)
             ?? throw new EntityNotFoundException($"Answer with id : {id} is not found!");
-        
-        _context.Answers.Remove(answer);
+
+        await _commentService.DeleteCommentByPostIdAsync(PostType.Answer, id);
+
+        _context.Answers.Remove(answer);    
+
         await _context.SaveChangesAsync();
     }
 

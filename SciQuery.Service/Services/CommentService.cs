@@ -31,7 +31,7 @@ public class CommentService(SciQueryDbContext context, IMapper mapper) : ICommen
     public async Task<IEnumerable<CommentDto>> GetAllCommentsByQuestionIdAsync(int questionId)
     {
         var comments = await _context.Comments
-            .Where(c => c.QuestionId == questionId)
+            .Where(c => c.Post == PostType.Question && c.PostId == questionId)
             .ToListAsync();
         return _mapper.Map<IEnumerable<CommentDto>>(comments);
     }
@@ -43,7 +43,7 @@ public class CommentService(SciQueryDbContext context, IMapper mapper) : ICommen
     public async Task<IEnumerable<CommentDto>> GetAllCommentsByAnswerIdAsync(int answerId)
     {
         var comments = await _context.Comments
-            .Where(c => c.AnswerId == answerId)
+            .Where(c => c.Post == PostType.Answer && c.PostId == answerId)
             .ToListAsync();
         return _mapper.Map<IEnumerable<CommentDto>>(comments);
     }
@@ -83,5 +83,15 @@ public class CommentService(SciQueryDbContext context, IMapper mapper) : ICommen
         _context.Comments.Remove(comment);
         await _context.SaveChangesAsync();
         return true;
+    }
+    public async Task DeleteCommentByPostIdAsync(PostType postType,int postId)
+    {
+        var comments = await _context.Comments
+            .Where(c => c.Post == postType && c.PostId == postId)
+            .ToListAsync();
+
+        _context.Comments.RemoveRange(comments);
+        _context.SaveChanges();
+        
     }
 }

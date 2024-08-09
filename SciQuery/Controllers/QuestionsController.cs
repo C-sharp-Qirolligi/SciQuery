@@ -1,13 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Domain.UserModels;
 using SciQuery.Service.DTOs.Question;
 using SciQuery.Service.Interfaces;
-using SciQuery.Service.Pagination.PaginatedList;
 using SciQuery.Service.QueryParams;
 using SciQuery.Service.Services;
 using System.Security.Claims;
@@ -35,9 +33,9 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         }
 
         [HttpGet("get-with-tags")]
-        public async Task<ActionResult> GetQuestionsByTags([FromBody] QuestionQueryParameters queryParams)
+        public async Task<ActionResult> GetQuestionsByTags([FromBody] QuestionQueryParameters queryParameters)
         {
-            var result = await _questionService.GetQuestionsByTags(queryParams);
+            var result = await _questionService.GetQuestionsByTags(queryParameters);
             return Ok(result);
         }
 
@@ -58,6 +56,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto question)
         {
             // Foydalanuvchini topish
@@ -117,7 +116,6 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         
         return NoContent();
     }
-
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteQuestion(int id)
     {

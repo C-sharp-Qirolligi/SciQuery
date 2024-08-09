@@ -28,9 +28,6 @@ public class DatabaseSeeder
             AddQuestionTags(context);
             context.SaveChanges(); 
 
-            AddVotes(context);
-            context.SaveChanges();
-
             AddReputationChanges(context);
             context.SaveChanges(); 
         }
@@ -100,13 +97,27 @@ public class DatabaseSeeder
 
         var commentFaker = new Faker<Comment>()
             .RuleFor(c => c.UserId, f => f.PickRandom(userIds))
-            .RuleFor(c => c.QuestionId, f => f.PickRandom(questionIds))
-            .RuleFor(c => c.AnswerId, f => f.PickRandom(answerIds))
+            .RuleFor(c => c.PostId, f => f.PickRandom(questionIds))
+            .RuleFor(c => c.Body, f => f.Lorem.Paragraphs())
+            .RuleFor(c => c.CreatedDate, f => f.Date.Past());
+        
+        var commentFakerAnswer = new Faker<Comment>()
+            .RuleFor(c => c.UserId, f => f.PickRandom(userIds))
+            .RuleFor(c => c.PostId, f => f.PickRandom(answerIds))
             .RuleFor(c => c.Body, f => f.Lorem.Paragraphs())
             .RuleFor(c => c.CreatedDate, f => f.Date.Past());
 
         var comments = commentFaker.Generate(100); // 100 comments
+        var commentsAnswer = commentFakerAnswer.Generate(100); // 100 comments
+
+        for(int i=0 ; i < 100; i++)
+        {
+            comments[i].Post = PostType.Question;
+            commentsAnswer[i].Post = PostType.Answer;
+        }
+
         context.Comments.AddRange(comments);
+        context.Comments.AddRange(commentsAnswer);
     }
 
     private static void AddTags(SciQueryDbContext context)
@@ -131,23 +142,6 @@ public class DatabaseSeeder
 
         var questionTags = questionTagFaker.Generate(30); // 30 question tags
         context.QuestionTags.AddRange(questionTags);
-    }
-
-    private static void AddVotes(SciQueryDbContext context)
-    {
-        if (context.Votes.Any()) return;
-        var userIds = context.Users.Select(u => u.Id).ToList();
-        var questionIds = context.Questions.Select(q => q.Id).ToList();
-        var answerIds = context.Answers.Select(a => a.Id).ToList();
-
-        var voteFaker = new Faker<Vote>()
-            .RuleFor(v => v.UserId, f => f.PickRandom(userIds))
-            .RuleFor(v => v.QuestionId, f => f.PickRandom(questionIds))
-            .RuleFor(v => v.AnswerId, f => f.PickRandom(answerIds))
-            .RuleFor(v => v.VoteType, f => f.PickRandom<VoteEnum>());
-
-        var votes = voteFaker.Generate(50); // 50 ta vote ma'lumotlari
-        context.Votes.AddRange(votes);
     }
 
     private static void AddReputationChanges(SciQueryDbContext context)

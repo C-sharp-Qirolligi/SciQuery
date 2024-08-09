@@ -11,11 +11,11 @@ using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
 
-
 namespace SciQuery.Service.Services;
 
-public class UserService(UserManager<User> user,IMapper mapper, IFileManagingService fileManaging) : IUserService
+public class UserService(UserManager<User> user,IMapper mapper, IFileManagingService fileManaging, IAnswerService answerService) : IUserService
 {
+    private readonly IAnswerService _answerService = answerService;
     private readonly UserManager<User> _userManager = user 
         ?? throw new ArgumentNullException(nameof(user));
     private readonly IMapper _mapper = mapper 
@@ -94,9 +94,18 @@ public class UserService(UserManager<User> user,IMapper mapper, IFileManagingSer
             {
                 return false;
             }
+            ///Manually deleting user answers because does not delete user with answers
+            //
+            var answers = await _context.Answers.Where(a => a.UserId == user.Id).Select(a => a.Id).ToListAsync();
+
+            foreach(var ans in answers)
+            {
+                await _answerService.DeleteAsync(ans);
+            }
 
             _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+
             return true;
         }
         catch (Exception ex)

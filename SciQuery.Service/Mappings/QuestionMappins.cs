@@ -13,7 +13,9 @@ namespace SciQuery.Service.Mappings
                 .ForMember(dest => dest.Tags, opt => opt
                 .MapFrom(src => src.QuestionTags.Select(qt => qt.Tag.Name)
                 .ToList()));
-
+            
+            CreateMap<QuestionDto, Question>();
+            
             CreateMap<QuestionForCreateDto, Question>();
             CreateMap<QuestionForUpdateDto, Question>();
         }
