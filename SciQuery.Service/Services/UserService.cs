@@ -10,18 +10,16 @@ using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
 
-public class UserService : IUserService
+public class UserService(SciQueryDbContext context,
+    UserManager<User> userManager,
+    IMapper mapper,
+    IAnswerService answerService
+    ) : IUserService
 {
-    private readonly SciQueryDbContext _context;
-    private readonly UserManager<User> _userManager;
-    private readonly IMapper _mapper;
-
-    public UserService(SciQueryDbContext context ,UserManager<User> userManager, IMapper mapper)
-    {
-        _context = context;
-        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
-        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-    }
+    private readonly SciQueryDbContext _context = context;
+    private readonly UserManager<User> _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+    private readonly IMapper _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+    private readonly IAnswerService _answerService = answerService;
 
     public async Task<PaginatedList<UserDto>> GetAllAsync()
     {
@@ -94,9 +92,18 @@ public class UserService : IUserService
             {
                 return false;
             }
+            ///Manually deleting user answers because does not delete user with answers
+            //
+            var answers = await _context.Answers.Where(a => a.UserId == user.Id).Select(a => a.Id).ToListAsync();
+
+            foreach(var ans in answers)
+            {
+                await _answerService.DeleteAsync(ans);
+            }
 
             _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+
             return true;
         }
         catch (Exception ex)

@@ -12,8 +12,8 @@ using SciQuery.Infrastructure.Persistance.DbContext;
 namespace SciQuery.Infrastructure.Migrations
 {
     [DbContext(typeof(SciQueryDbContext))]
-    [Migration("20240801145616_Intial_Create")]
-    partial class Intial_Create
+    [Migration("20240808143552_1")]
+    partial class _1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -212,6 +212,12 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Post")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("QuestionId")
                         .HasColumnType("int");
 
@@ -227,7 +233,7 @@ namespace SciQuery.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comment", (string)null);
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Question", b =>
@@ -342,6 +348,12 @@ namespace SciQuery.Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int?>("AnswerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Post")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PostId")
                         .HasColumnType("int");
 
                     b.Property<int?>("QuestionId")
@@ -514,11 +526,11 @@ namespace SciQuery.Infrastructure.Migrations
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Comment", b =>
                 {
-                    b.HasOne("SciQuery.Domain.Entities.Answer", "Answer")
+                    b.HasOne("SciQuery.Domain.Entities.Answer", null)
                         .WithMany("Comments")
                         .HasForeignKey("AnswerId");
 
-                    b.HasOne("SciQuery.Domain.Entities.Question", "Question")
+                    b.HasOne("SciQuery.Domain.Entities.Question", null)
                         .WithMany("Comments")
                         .HasForeignKey("QuestionId");
 
@@ -527,10 +539,6 @@ namespace SciQuery.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Answer");
-
-                    b.Navigation("Question");
 
                     b.Navigation("User");
                 });
@@ -578,11 +586,11 @@ namespace SciQuery.Infrastructure.Migrations
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Vote", b =>
                 {
-                    b.HasOne("SciQuery.Domain.Entities.Answer", "Answer")
+                    b.HasOne("SciQuery.Domain.Entities.Answer", null)
                         .WithMany("Votes")
                         .HasForeignKey("AnswerId");
 
-                    b.HasOne("SciQuery.Domain.Entities.Question", "Question")
+                    b.HasOne("SciQuery.Domain.Entities.Question", null)
                         .WithMany("Votes")
                         .HasForeignKey("QuestionId");
 
@@ -591,10 +599,6 @@ namespace SciQuery.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Answer");
-
-                    b.Navigation("Question");
 
                     b.Navigation("User");
                 });
