@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SciQuery.Service.DTOs.Answer;
 using SciQuery.Service.Interfaces;
+using SciQuery.Service.Services;
 
 namespace SciQuery.Controllers
 {
@@ -40,6 +41,14 @@ namespace SciQuery.Controllers
             var createdAnswer = await _answerService.CreateAsync(answerCreateDto);
             return CreatedAtAction(nameof(GetAnswerById), new { id = createdAnswer.Id }, createdAnswer);
         }
+
+        [HttpPost("UploadImages")]
+        public async Task<ActionResult> UploadFile(List<IFormFile> files)
+        {
+            var result = await _answerService.CreateImages(files);
+            return Ok(result);
+        }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAnswer(int id, [FromBody] AnswerForUpdateDto answerUpdateDto)

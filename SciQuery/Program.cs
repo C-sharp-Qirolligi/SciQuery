@@ -1,6 +1,7 @@
 using Bogus;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SciQuery.Domain.UserModels;
@@ -30,7 +31,10 @@ builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
+builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
+
 //Add Services
+builder.Services.AddScoped<IFileManagingService, FileMangingService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITagService, TagService>();

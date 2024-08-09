@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
@@ -10,10 +11,14 @@ using SciQuery.Service.Pagination.PaginatedList;
 
 namespace SciQuery.Service.Services;
 
-public class AnswerService(SciQueryDbContext context, IMapper mapper,ICommentService commentService) : IAnswerService
+public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManagingService fileManaging, ICommentService commentService) : IAnswerService
 {
-    private readonly SciQueryDbContext _context = context;
-    private readonly IMapper _mapper = mapper;
+    private readonly SciQueryDbContext _context = context
+        ??throw new ArgumentNullException(nameof(context));
+    private readonly IMapper _mapper = mapper
+        ?? throw new ArgumentNullException(nameof(mapper));
+    private readonly IFileManagingService _fileManaging = fileManaging
+       ?? throw new ArgumentNullException(nameof(mapper));
     private readonly ICommentService _commentService = commentService;
 
     public async Task<AnswerDto> GetByIdAsync(int id)
@@ -56,6 +61,11 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper,ICommentSer
         return _mapper.Map<AnswerDto>(answer);
     }
 
+    public async Task<List<string>> CreateImages(List<IFormFile> files)
+    {
+        return await _fileManaging.UploadAnswersImagesAsync(files);
+    }
+
     public async Task UpdateAsync(int id, AnswerForUpdateDto answerUpdateDto)
     {
         var answer = await _context.Answers.FindAsync(id)
@@ -78,4 +88,5 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper,ICommentSer
 
         await _context.SaveChangesAsync();
     }
+
 }
