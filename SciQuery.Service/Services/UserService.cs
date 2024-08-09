@@ -13,7 +13,7 @@ using SciQuery.Service.Pagination.PaginatedList;
 
 namespace SciQuery.Service.Services;
 
-public class UserService(UserManager<User> user,IMapper mapper, IFileManagingService fileManaging, IAnswerService answerService) : IUserService
+public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContext context, IFileManagingService fileManaging, IAnswerService answerService) : IUserService
 {
     private readonly IAnswerService _answerService = answerService;
     private readonly UserManager<User> _userManager = user 
@@ -22,6 +22,9 @@ public class UserService(UserManager<User> user,IMapper mapper, IFileManagingSer
         ?? throw new ArgumentNullException(nameof(mapper));
     private readonly IFileManagingService _fileManaging = fileManaging
        ?? throw new ArgumentNullException(nameof(mapper));
+    private readonly SciQueryDbContext _context = context 
+       ?? throw new ArgumentNullException(nameof(context));
+
     public async Task<PaginatedList<UserDto>> GetAllAsync()
     {
         var users = await _userManager.Users
