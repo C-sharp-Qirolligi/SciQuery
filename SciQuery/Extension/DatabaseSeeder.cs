@@ -67,7 +67,7 @@ public class DatabaseSeeder
             .RuleFor(q => q.CreatedDate, f => f.Date.Past())
             .RuleFor(q => q.UpdatedDate, f => f.Date.Past());
 
-        var questions = questionFaker.Generate(20); // 20 questions
+        var questions = questionFaker.Generate(50); // 20 questions
         context.Questions.AddRange(questions);
     }
 
@@ -126,7 +126,7 @@ public class DatabaseSeeder
         var tagFaker = new Faker<Tag>()
             .RuleFor(t => t.Name, f => f.Lorem.Word());
 
-        var tags = tagFaker.Generate(15); // 15 tags
+        var tags = tagFaker.Generate(50); // 15 tags
         context.Tags.AddRange(tags);
     }
 
@@ -140,7 +140,7 @@ public class DatabaseSeeder
             .RuleFor(qt => qt.QuestionId, f => f.PickRandom(questionIds))
             .RuleFor(qt => qt.TagId, f => f.PickRandom(tagIds));
 
-        var questionTags = questionTagFaker.Generate(30); // 30 question tags
+        var questionTags = questionTagFaker.Generate(100); // 50 question tags
         context.QuestionTags.AddRange(questionTags);
     }
 

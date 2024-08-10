@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
+using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.DTOs.Question;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
@@ -54,12 +55,12 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
     public async Task<PaginatedList<ForEasyQestionDto>> GetAllAsync(QuestionQueryParameters queryParams)
     {
         var query = _context.Questions
+            .AsQueryable()
             .Include(q => q.User)
             .Include(q => q.Answers)
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
-            .AsNoTracking()
-            .AsQueryable();
+            .AsNoTracking();
 
 
         if (!string.IsNullOrEmpty(queryParams.Search))
@@ -93,8 +94,24 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
         }
 
         var result = await query.Include(a => a.Answers).ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        
+        var questionIds = await query.Select(q => q.Id).ToListAsync();
 
+        var comments = await _context.Comments
+            .Where(c => questionIds.Contains(c.PostId) && c.Post == PostType.Question)
+            .GroupBy(c => c.PostId)
+            .Select(g => new
+            {
+                PostId = g.Key,
+                Count = g.Count()
+            })
+            .ToListAsync();
 
+        // Step 3: Associate comments with their respective answers
+        foreach (var question in result.Data)
+        {
+            question.CommentsCount = comments.FirstOrDefault(c => c.PostId == question.Id).Count;
+        }
 
         return result;
     }
