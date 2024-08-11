@@ -51,7 +51,7 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
     public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto question)
     {
         // Foydalanuvchini topish
-        var user = await _userManager.GetUserAsync(User)
+            var user = await _userManager.GetUserAsync(User)
             ?? throw new EntityNotFoundException("User does not found!");
         
         question.UserId = user.Id;
