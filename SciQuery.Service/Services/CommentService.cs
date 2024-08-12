@@ -60,7 +60,9 @@ public class CommentService(SciQueryDbContext context, IMapper mapper) : ICommen
 
     public async Task<CommentDto> UpdateCommentAsync(int id, CommentForUpdateDto commentUpdateDto)
     {
-        var comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == id) ?? throw new EntityNotFoundException("Comment not Found");
+        var comment = await _context.Comments
+            .FirstOrDefaultAsync(c => c.Id == id) 
+            ?? throw new EntityNotFoundException("Comment not Found");
         
         _mapper.Map(commentUpdateDto, comment);
         await _context.SaveChangesAsync();

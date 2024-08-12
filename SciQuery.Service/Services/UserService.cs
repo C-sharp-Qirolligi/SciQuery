@@ -99,7 +99,10 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
             }
             ///Manually deleting user answers because does not delete user with answers
             //
-            var answers = await _context.Answers.Where(a => a.UserId == user.Id).Select(a => a.Id).ToListAsync();
+            var answers = await _context.Answers
+                .Where(a => a.UserId == user.Id)
+                .Select(a => a.Id)
+                .ToListAsync();
 
             foreach(var ans in answers)
             {

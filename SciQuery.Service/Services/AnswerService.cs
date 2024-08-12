@@ -35,6 +35,11 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManag
             .FirstOrDefaultAsync(a => a.Id == id)
             ?? throw new EntityNotFoundException($"Answer with id : {id} is not found!");
 
+        answer.Comments = await _context.Comments
+            .Where(c => c.Post == PostType.Question && c.PostId == id)
+            .AsNoTracking()
+            .ToListAsync();
+
         return _mapper.Map<AnswerDto>(answer);
     }
 
@@ -49,7 +54,9 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManag
             .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, 1, 15);
 
         // Step 2: Fetch comments for all answers
-        var answerIds = answers.Data.Select(a => a.Id).ToList();
+        var answerIds = answers.Data
+            .Select(a => a.Id)
+            .ToList();
 
         var comments = await _context.Comments
             .Include(c => c.User) // Include the user who posted the comment
@@ -67,10 +74,6 @@ public class AnswerService(SciQueryDbContext context, IMapper mapper, IFileManag
 
         return answers;
     }
-
-
-
-
 
     public async Task<AnswerDto> CreateAsync(AnswerForCreateDto answerCreateDto)
     {

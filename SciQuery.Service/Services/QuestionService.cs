@@ -93,9 +93,13 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
             query = query.OrderBy(x => x.UpdatedDate);
         }
 
-        var result = await query.Include(a => a.Answers).ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        var result = await query
+            .Include(a => a.Answers)
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
         
-        var questionIds = await query.Select(q => q.Id).ToListAsync();
+        var questionIds = await query
+            .Select(q => q.Id)
+            .ToListAsync();
 
         var comments = await _context.Comments
             .Where(c => questionIds.Contains(c.PostId) && c.Post == PostType.Question)
@@ -107,10 +111,10 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
             })
             .ToListAsync();
 
-        // Step 3: Associate comments with their respective answers
         foreach (var question in result.Data)
         {
-            question.CommentsCount = comments.FirstOrDefault(c => c.PostId == question.Id).Count;
+            var comment = comments.FirstOrDefault(c => c.PostId == question.Id);
+            question.CommentsCount = comment != null ? comment.Count : 0;
         }
 
         return result;
@@ -124,7 +128,8 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
             .AsNoTracking()
-            .FirstOrDefaultAsync(q => q.Id == id) ?? throw new EntityNotFoundException($"Question does not found {id}");
+            .FirstOrDefaultAsync(q => q.Id == id)
+            ?? throw new EntityNotFoundException($"Question does not found {id}");
 
         question.Comments = await _context.Comments
             .Where(c => c.Post == PostType.Question && c.PostId == id)
