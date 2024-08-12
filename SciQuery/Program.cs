@@ -8,6 +8,7 @@ using SciQuery.Domain.UserModels;
 using SciQuery.Domain.UserModels.AppRoles;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Middlewares;
+using SciQuery.Service.Hubs;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings;
 using SciQuery.Service.Services;
@@ -42,6 +43,9 @@ builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IAnswerService, AnswerService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddAutoMapper(typeof(UserMappings).Assembly);
+
+builder.Services.AddSingleton<IUserConnectionManager, UserConnectionManager>();
+
 //Identity Usermanager and rolemanager
 builder.Services.AddDbContext<SciQueryDbContext>();
 
@@ -152,9 +156,10 @@ builder.Services.AddCors(options =>
         builder => builder
             .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
-
+    builder.Services.AddSignalR();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -182,6 +187,7 @@ using (var serviceScope = app.Services.CreateScope())
     if (!await roleManager.RoleExistsAsync(AppRoles.User))
     {
         await roleManager.CreateAsync(new IdentityRole(AppRoles.User));
+        await roleManager.CreateAsync(new IdentityRole(AppRoles.User));
     }
 
     if (!await roleManager.RoleExistsAsync(AppRoles.Administrator))
@@ -207,6 +213,8 @@ app.UseCors("AllowLocalhost5173");
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.MapHub<NotificationHub>("api/notificationHub");
 
 app.MapControllers();
 
