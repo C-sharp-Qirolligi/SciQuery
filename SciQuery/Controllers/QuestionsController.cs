@@ -15,33 +15,31 @@ namespace SciQuery.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [EnableCors("AllowLocalhost5173")]
-public class QuestionsController(IQuestionService questionService) : ControllerBase
+public class QuestionsController(IQuestionService questionService, UserManager<User> userManager) : ControllerBase
 {
 
-    [Route("api/[controller]")]
-    [ApiController]
-    [EnableCors("AllowLocalhost5173")]
-    public class QuestionsController : ControllerBase
+    private readonly IQuestionService _questionService = questionService;
+    private readonly UserManager<User> _userManager = userManager;
+
+    [HttpGet("get-with-tags")]
+    public async Task<ActionResult> GetQuestionsByTags([FromBody] QuestionQueryParameters queryParameters)
     {
-        private readonly IQuestionService _questionService;
-        private readonly UserManager<User> _userManager;
+        var result = await _questionService.GetQuestionsByTags(queryParameters);
+        return Ok(result);
+    }
 
-        public QuestionsController(IQuestionService questionService, UserManager<User> userManager)
-        {
-            _questionService = questionService;
-            _userManager = userManager;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetAllQuestions([FromQuery] QuestionQueryParameters queryParameters)
+    {
+        var questions = await _questionService.GetAllAsync(queryParameters);
+        return Ok(questions);
+    }
 
-        [HttpGet("get-with-tags")]
-        public async Task<ActionResult> GetQuestionsByTags([FromBody] QuestionQueryParameters queryParameters)
-        {
-            var result = await _questionService.GetQuestionsByTags(queryParameters);
-            return Ok(result);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAllQuestions([FromQuery] QuestionQueryParameters queryParameters)
-
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetQuestionById(int id)
+    {
+        var question = await _questionService.GetByIdAsync(id);
+        if (question == null)
         {
             return NotFound();
         }
@@ -49,53 +47,28 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto questionDto)
+    [Authorize]
+    public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto question)
     {
-        questionDto.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier) 
+        // Foydalanuvchini topish
+            var user = await _userManager.GetUserAsync(User)
             ?? throw new EntityNotFoundException("User does not found!");
-
-
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto question)
-        {
-            // Foydalanuvchini topish
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                throw new EntityNotFoundException("User does not found!");
-            }
-
-            question.UserId = user.Id;
-
-            // ModelState ni tekshirish
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                // Savol yaratish jarayoni
-                var createdQuestion = await _questionService.CreateAsync(question);
-
-                // Yaratilgan savolni qaytarish
-                return CreatedAtAction(nameof(GetQuestionById),
-                       new { id = createdQuestion.Id },
-                       createdQuestion);
-            }
-            catch (Exception ex)
-            {
-                // Har qanday boshqa xatolar uchun umumiy xatolik javobini qaytarish
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-
-        }
         
-        var createdQuestion = await _questionService.CreateAsync(questionDto);
-        return Created(nameof(GetQuestionById),new { createdQuestion });
-    }
+        question.UserId = user.Id;
 
+        // ModelState ni tekshirish
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        // Savol yaratish jarayoni
+        var createdQuestion = await _questionService.CreateAsync(question);
+
+        // Yaratilgan savolni qaytarish
+        return CreatedAtAction(nameof(GetQuestionById),
+               new { id = createdQuestion.Id }, createdQuestion);
+    }
 
     [HttpPost("UploadImages")]
     public async Task<ActionResult> UploadFile(List<IFormFile> files)
@@ -113,14 +86,19 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         }
 
         await _questionService.UpdateAsync(id, questionDto);
-        
+
         return NoContent();
     }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteQuestion(int id)
     {
-        await _questionService.DeleteAsync(id);
-        
+        var result = await _questionService.DeleteAsync(id);
+        if (!result)
+        {
+            return NotFound();
+        }
+
         return NoContent();
     }
 }

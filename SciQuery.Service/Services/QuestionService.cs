@@ -1,17 +1,15 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
+using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.DTOs.Question;
-using SciQuery.Service.DTOs.Tag;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
 using SciQuery.Service.QueryParams;
-using System.Reflection.Metadata.Ecma335;
 
 namespace SciQuery.Service.Services;
 
@@ -57,12 +55,12 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
     public async Task<PaginatedList<ForEasyQestionDto>> GetAllAsync(QuestionQueryParameters queryParams)
     {
         var query = _context.Questions
+            .AsQueryable()
             .Include(q => q.User)
             .Include(q => q.Answers)
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
-            .AsNoTracking()
-            .AsQueryable();
+            .AsNoTracking();
 
 
         if (!string.IsNullOrEmpty(queryParams.Search))
@@ -95,9 +93,29 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
             query = query.OrderBy(x => x.UpdatedDate);
         }
 
-        var result = await query.Include(a => a.Answers).ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        var result = await query
+            .Include(a => a.Answers)
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        
+        var questionIds = await query
+            .Select(q => q.Id)
+            .ToListAsync();
 
+        var comments = await _context.Comments
+            .Where(c => questionIds.Contains(c.PostId) && c.Post == PostType.Question)
+            .GroupBy(c => c.PostId)
+            .Select(g => new
+            {
+                PostId = g.Key,
+                Count = g.Count()
+            })
+            .ToListAsync();
 
+        foreach (var question in result.Data)
+        {
+            var comment = comments.FirstOrDefault(c => c.PostId == question.Id);
+            question.CommentsCount = comment != null ? comment.Count : 0;
+        }
 
         return result;
     }
@@ -110,7 +128,8 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
             .AsNoTracking()
-            .FirstAsync(q => q.Id == id);
+            .FirstOrDefaultAsync(q => q.Id == id)
+            ?? throw new EntityNotFoundException($"Question does not found {id}");
 
         question.Comments = await _context.Comments
             .Where(c => c.Post == PostType.Question && c.PostId == id)

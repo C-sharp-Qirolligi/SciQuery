@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SciQuery.Domain.Exceptions;
+using SciQuery.Domain.UserModels;
 using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.Interfaces;
 
@@ -7,9 +11,10 @@ namespace SciQuery.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CommentsController(ICommentService commentService) : ControllerBase
+    public class CommentsController(ICommentService commentService, UserManager<User> userManager) : ControllerBase
     {
         private readonly ICommentService _commentService = commentService;
+        private readonly UserManager<User> _userManager = userManager;
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCommentById(int id)
@@ -37,12 +42,18 @@ namespace SciQuery.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateComment([FromBody] CommentForCreateDto commentCreateDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+            // Foydalanuvchini topish
+            var user = await _userManager.GetUserAsync(User)
+                ?? throw new EntityNotFoundException("User does not found!");
+
+            commentCreateDto.UserId = user.Id;
 
             var createdComment = await _commentService.CreateCommentAsync(commentCreateDto);
             return CreatedAtAction(nameof(GetCommentById), new { id = createdComment.Id }, createdComment);
@@ -55,13 +66,15 @@ namespace SciQuery.Controllers
             {
                 return BadRequest(ModelState);
             }
+            
+            // Foydalanuvchini topish
+            var user = await _userManager.GetUserAsync(User)
+                ?? throw new EntityNotFoundException("User does not found!");
+
+            commentUpdateDto.UserId = user.Id;
 
             var updatedComment = await _commentService.UpdateCommentAsync(id, commentUpdateDto);
-            if (updatedComment == null)
-            {
-                return NotFound();
-            }
-
+           
             return Ok(updatedComment);
         }
 

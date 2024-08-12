@@ -64,7 +64,7 @@ namespace SciQuery.Controllers
 
             await _userService.UpdateAsync(id, userUpdateDto);
 
-            return Ok();
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
