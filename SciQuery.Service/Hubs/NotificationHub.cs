@@ -1,41 +1,27 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using SciQuery.Service.Services;
 using System.Threading.Tasks;
 
 namespace SciQuery.Service.Hubs
 {
-    //public class NotificationHub : Hub
-    //{
-    //    public int reulst() {  return 0; }
-    //    public async Task SendNotification(string userId, string message)
-    //    {
-    //        await Clients.User(userId).SendAsync("ReceiveNotification", message);
-    //    }
-
-    //}
-    public class NotificationHub : Hub
+    public interface INotificationClient
     {
-        private readonly IUserConnectionManager _userConnectionManager;
+        Task ReceiveNotification(string message);
+    }
 
-        public NotificationHub(IUserConnectionManager userConnectionManager)
-        {
-            _userConnectionManager = userConnectionManager;
-        }
-
+    [Authorize]
+    public class NotificationHub : Hub<INotificationClient>
+    {
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.UserIdentifier;
-            if (userId != null)
-            {
-                _userConnectionManager.AddConnection(userId, Context.ConnectionId);
-            }
+            await Clients.All.ReceiveNotification($"UserConnected {Context.User.Identity?.Name}");
             await base.OnConnectedAsync();
         }
-
-        public override async Task OnDisconnectedAsync(Exception exception)
+        
+        public string GetConnectionId()
         {
-            _userConnectionManager.RemoveConnection(Context.ConnectionId);
-            await base.OnDisconnectedAsync(exception);
+            return Context.ConnectionId;
         }
     }
 }

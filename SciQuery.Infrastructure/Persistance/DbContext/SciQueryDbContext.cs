@@ -35,7 +35,7 @@ public class SciQueryDbContext(DbContextOptions<SciQueryDbContext> options,
     }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnectionMuhammad"));
+        optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnectionFirdavs"));
         base.OnConfiguring(optionsBuilder);
     }
 }

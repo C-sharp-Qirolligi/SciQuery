@@ -44,7 +44,6 @@ builder.Services.AddScoped<IAnswerService, AnswerService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddAutoMapper(typeof(UserMappings).Assembly);
 
-builder.Services.AddSingleton<IUserConnectionManager, UserConnectionManager>();
 
 //Identity Usermanager and rolemanager
 builder.Services.AddDbContext<SciQueryDbContext>();
@@ -207,6 +206,7 @@ app.UseMiddleware<ExceptionHandler>();
        
 //For api response to fronted react
 app.UseRouting();
+
 //and this
 app.UseCors("AllowLocalhost5173");
 
@@ -215,7 +215,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<NotificationHub>("api/notificationHub");
-
 app.MapControllers();
 
 app.Run();
