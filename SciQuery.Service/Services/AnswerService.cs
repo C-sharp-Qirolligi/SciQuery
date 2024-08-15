@@ -11,7 +11,7 @@ using AutoMapper.QueryableExtensions;
 using SciQuery.Service.Pagination.PaginatedList;
 using SciQuery.Service.Mappings.Extensions;
 using Microsoft.AspNetCore.SignalR;
-using SciQuery.Service.Hubs;
+using SciQuery.Domain.UserModels;
 
 namespace SciQuery.Service.Services;
 
@@ -19,8 +19,7 @@ public class AnswerService(SciQueryDbContext context,
                             IMapper mapper, 
                             IFileManagingService fileManaging,
                             ICommentService commentService,
-                            IHubContext<NotificationHub> hubContext,
-                            IUserConnectionManager userConnectionManager) : IAnswerService
+                            IHubContext<NotificationHub> hubContext) : IAnswerService
 {
     private readonly SciQueryDbContext _context = context
         ??throw new ArgumentNullException(nameof(context));
@@ -30,7 +29,6 @@ public class AnswerService(SciQueryDbContext context,
        ?? throw new ArgumentNullException(nameof(mapper));
     private readonly ICommentService _commentService = commentService;
     private readonly IHubContext<NotificationHub> _hubContext = hubContext;
-    private readonly IUserConnectionManager _userConnectionManager = userConnectionManager;
 
     public async Task<AnswerDto> GetByIdAsync(int id)
     {
@@ -131,22 +129,15 @@ public class AnswerService(SciQueryDbContext context,
         _context.Answers.Add(answer);
         await _context.SaveChangesAsync();
 
+        // Savolni yaratgan foydalanuvchiga bildirishnoma yuborish
         var question = await _context.Questions
             .Include(q => q.User)
             .FirstOrDefaultAsync(q => q.Id == answer.QuestionId);
 
         if (question != null)
         {
-            var userId = question.User.Id.ToString();
-            var connections = _userConnectionManager.GetConnections(userId);
-
-            if (connections != null && connections.Any())
-            {
-                foreach (var connectionId in connections)
-                {
-                    await _hubContext.Clients.Client(connectionId).SendAsync("ReceiveNotification", "You have a new answer to your question!");
-                }
-            }
+            await _hubContext.Clients.All
+                .SendAsync("ReceiveNotification", "Sizning savolingizga yangi javob qo'shildi!");
         }
 
         return _mapper.Map<AnswerDto>(answer);

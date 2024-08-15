@@ -1,4 +1,3 @@
-using Bogus;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.StaticFiles;
@@ -8,7 +7,6 @@ using SciQuery.Domain.UserModels;
 using SciQuery.Domain.UserModels.AppRoles;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Middlewares;
-using SciQuery.Service.Hubs;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings;
 using SciQuery.Service.Services;
@@ -44,7 +42,6 @@ builder.Services.AddScoped<IAnswerService, AnswerService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddAutoMapper(typeof(UserMappings).Assembly);
 
-builder.Services.AddSingleton<IUserConnectionManager, UserConnectionManager>();
 
 //Identity Usermanager and rolemanager
 builder.Services.AddDbContext<SciQueryDbContext>();
@@ -159,7 +156,10 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowCredentials());
 });
-    builder.Services.AddSignalR();
+
+builder.Services.AddSignalR();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
