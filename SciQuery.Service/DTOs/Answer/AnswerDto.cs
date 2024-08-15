@@ -1,11 +1,5 @@
 ﻿using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.DTOs.User;
-using SciQuery.Service.DTOs.Vote;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciQuery.Service.DTOs.Answer
 {
@@ -19,7 +13,7 @@ namespace SciQuery.Service.DTOs.Answer
         public string UserId { get; set; }
         public UserDto User { get; set; }
 
-        public ICollection<VoteDto> Votes { get; set; }
+        public int Votes { get; set; }
         public ICollection<CommentDto> Comments { get; set; }
     }
 }

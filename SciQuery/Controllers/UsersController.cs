@@ -45,6 +45,14 @@ namespace SciQuery.Controllers
 
             return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
         }
+        [HttpPost("UploadImages")]
+        public async Task<ActionResult> UploadFile(IFormFile file)
+        {
+            var result = await _userService.CreateImage(file);
+            return Ok(result);
+        }
+
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UserForUpdatesDto userUpdateDto)
@@ -56,7 +64,7 @@ namespace SciQuery.Controllers
 
             await _userService.UpdateAsync(id, userUpdateDto);
 
-            return Ok();
+            return NoContent();
         }
 
         [HttpDelete("{id}")]

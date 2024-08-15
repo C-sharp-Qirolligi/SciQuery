@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
+using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.DTOs.Question;
-using SciQuery.Service.DTOs.Tag;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
@@ -13,11 +13,15 @@ using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
-public class QuestionService(SciQueryDbContext dbContext,IMapper mapper,IAnswerService answerService,ICommentService commentService) : IQuestionService
+public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileManagingService fileManaging, ICommentService commentService) : IQuestionService
 {
-    private readonly SciQueryDbContext _context = dbContext;
-    private readonly IMapper _mapper = mapper;
-    private readonly IAnswerService _answerService = answerService;
+    private readonly SciQueryDbContext _context = dbContext
+        ?? throw new ArgumentNullException(nameof(dbContext));
+    private readonly IMapper _mapper = mapper
+        ?? throw new ArgumentNullException(nameof(mapper));
+    private readonly IFileManagingService _fileManaging = fileManaging
+       ?? throw new ArgumentNullException(nameof(mapper));
+
     private readonly ICommentService _commentService  = commentService;
 
 
@@ -51,17 +55,17 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper,IAnswerS
     public async Task<PaginatedList<ForEasyQestionDto>> GetAllAsync(QuestionQueryParameters queryParams)
     {
         var query = _context.Questions
-        .Include(q => q.User)
-        .Include(q => q.Answers)
-        .Include(q => q.Votes)
-        .Include(q => q.QuestionTags)
-        .ThenInclude(qt => qt.Tag)
-        .AsNoTracking()
-        .AsQueryable();
+            .AsQueryable()
+            .Include(q => q.User)
+            .Include(q => q.Answers)
+            .Include(q => q.QuestionTags)
+            .ThenInclude(qt => qt.Tag)
+            .AsNoTracking();
+
 
         if (!string.IsNullOrEmpty(queryParams.Search))
         {
-            query = query.Where(q => q.Title.Contains(queryParams.Search) 
+            query = query.Where(q => q.Title.Contains(queryParams.Search)
                     || q.Body.Contains(queryParams.Search));
         }
 
@@ -89,21 +93,49 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper,IAnswerS
             query = query.OrderBy(x => x.UpdatedDate);
         }
 
-        var result =  await query.ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        var result = await query
+            .Include(a => a.Answers)
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+        
+        var questionIds = await query
+            .Select(q => q.Id)
+            .ToListAsync();
+
+        var comments = await _context.Comments
+            .Where(c => questionIds.Contains(c.PostId) && c.Post == PostType.Question)
+            .GroupBy(c => c.PostId)
+            .Select(g => new
+            {
+                PostId = g.Key,
+                Count = g.Count()
+            })
+            .ToListAsync();
+
+        foreach (var question in result.Data)
+        {
+            var comment = comments.FirstOrDefault(c => c.PostId == question.Id);
+            question.CommentsCount = comment != null ? comment.Count : 0;
+        }
+
         return result;
     }
     public async Task<QuestionDto> GetByIdAsync(int id)
     {
         var question = await _context.Questions
+            .Where(q => q.Id == id)
             .Include(q => q.User)
+            .Include(q => q.Answers)
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
-            .Include(q => q.Comments)
-            .Include(q => q.Votes)
             .AsNoTracking()
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(q => q.Id == id);
+            .FirstOrDefaultAsync(q => q.Id == id)
+            ?? throw new EntityNotFoundException($"Question does not found {id}");
 
+        question.Comments = await _context.Comments
+            .Where(c => c.Post == PostType.Question && c.PostId == id)
+            .AsNoTracking()
+            .ToListAsync();
+        
         var dto = _mapper.Map<QuestionDto>(question);
 
         return dto
@@ -159,6 +191,11 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper,IAnswerS
         return _mapper.Map<QuestionDto>(question);
     }
 
+    public async Task<List<string>> CreateImages(List<IFormFile> files)
+    {
+        return await _fileManaging.UploadQuestionImagesAsync(files);
+    }
+
     public async Task UpdateAsync(int id, QuestionForUpdateDto questionUpdateDto)
     {
         var question = await _context.Questions.FindAsync(id) 
@@ -173,33 +210,14 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper,IAnswerS
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var question = await _context.Questions.Include(c => c.Votes).Include(c => c.Comments).FirstOrDefaultAsync(x => x.Id == id);
+        var question = await _context.Questions.FirstOrDefaultAsync(q => q.Id == id);
+
         if (question == null)
         {
             return false;
         }
 
-        var answers = _context.Answers.Where(a => a.QuestionId == id).Include(c => c.Comments)
-            .Include(c => c.Votes).ToList();
-
-        foreach (var i in answers)
-        {
-            _context.Comments.RemoveRange(i.Comments);
-        }
-
-        foreach (var i in answers)
-        {
-            _context.Votes.RemoveRange(i.Votes);
-        }
-        await _context.SaveChangesAsync();
-
-        _context.Answers.RemoveRange(answers);
-        await _context.SaveChangesAsync();
-
-
-        _context.Comments.RemoveRange(question.Comments);
-        _context.Votes.RemoveRange(question.Votes);
-        await _context.SaveChangesAsync();
+        await _commentService.DeleteCommentByPostIdAsync(PostType.Question, question.Id);   
 
         _context.Questions.Remove(question);
         await _context.SaveChangesAsync();

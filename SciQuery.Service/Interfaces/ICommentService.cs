@@ -1,4 +1,5 @@
-﻿using SciQuery.Service.DTOs.Comment;
+﻿using SciQuery.Domain.Entities;
+using SciQuery.Service.DTOs.Comment;
 
 namespace SciQuery.Service.Interfaces;
 
@@ -11,4 +12,5 @@ public interface ICommentService
     Task<CommentDto> CreateCommentAsync(CommentForCreateDto commentCreateDto);
     Task<CommentDto> UpdateCommentAsync(int id, CommentForUpdateDto commentUpdateDto);
     Task<bool> DeleteCommentAsync(int id);
+    Task DeleteCommentByPostIdAsync(PostType postType,int postId);
 }
