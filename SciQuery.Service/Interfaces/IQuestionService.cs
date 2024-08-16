@@ -14,7 +14,7 @@ public interface IQuestionService
     Task<QuestionDto> GetByIdAsync(int id);
 
     Task<QuestionDto> CreateAsync(QuestionForCreateDto question);
-    Task<List<string>> CreateImages(List<IFormFile> files);
+    Task<string> CreateImages(IFormFile file);
 
     Task UpdateAsync(int id,QuestionForUpdateDto question);
     Task<bool> DeleteAsync(int id);

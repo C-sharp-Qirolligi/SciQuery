@@ -144,9 +144,9 @@ public class AnswerService(SciQueryDbContext context,
     }
 
 
-    public async Task<List<string>> CreateImages(List<IFormFile> files)
+    public async Task<string> CreateImages(IFormFile file)
     {
-        return await _fileManaging.UploadAnswersImagesAsync(files);
+        return await _fileManaging.UploadFile(file,"Source","Images","AnswerImages");
     }
 
     public async Task UpdateAsync(int id, AnswerForUpdateDto answerUpdateDto)

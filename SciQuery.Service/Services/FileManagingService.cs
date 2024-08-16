@@ -13,111 +13,36 @@ namespace SciQuery.Service.Services;
 public class FileMangingService(FileExtensionContentTypeProvider fileExtension) : IFileManagingService
 {
     private readonly FileExtensionContentTypeProvider _fileExtension = fileExtension;
-    public async Task<string> UploadUserImagesAsync(IFormFile file)
+  
+    public async Task<string> UploadFile(IFormFile file,params string[] imagePath)
     {
-
-        if (file is null)
+        if (file == null)
         {
-            throw new ArgumentNullException("File cannot be null.");
+            throw new ArgumentNullException("Files cannot be null or empty.");
         }
 
         if (file.Length == 0 || file.Length > 1024 * 1024 * 40)
         {
-            throw new ArgumentNullException("File must be image!");
+            throw new ArgumentException("Each file must be an image with a size up to 40 MB.");
         }
 
         var fileName = Guid.NewGuid() + file.FileName;
 
         var path = Directory.GetCurrentDirectory();
-
-        /*if (file.ContentType == "image/jpeg" || file.ContentType == "image/png")
+        
+        foreach(var directory in imagePath)
         {
-            path = Path.Combine(
-                "uploads",
-                "images",
-                fileName);
+            path = Path.Combine(path, directory);
         }
-        else
-        {
-            path = Path.Combine(
-                "uploads",
-                "Files",
-                fileName);
-        }*/
-        path = Path.Combine(path,"source","Images","userImages",fileName);
 
+        path  = Path.Combine(path, fileName);
+        
         using (var stream = new FileStream(path, FileMode.Create))
         {
             await file.CopyToAsync(stream);
         }
 
         return fileName;
-    }
-
-    public async Task<List<string>> UploadQuestionImagesAsync(List<IFormFile> files)
-    {
-        if (files == null)
-        {
-            throw new ArgumentNullException("Files cannot be null or empty.");
-        }
-
-        var uploadedFileNames = new List<string>();
-
-        foreach (var file in files)
-        {
-            if (file.Length == 0 || file.Length > 1024 * 1024 * 40)
-            {
-                throw new ArgumentException("Each file must be an image with a size up to 40 MB.");
-            }
-
-            var fileName = Guid.NewGuid() + file.FileName;
-
-            var path = Directory.GetCurrentDirectory();
-
-            path = Path.Combine(path, "Source", "Images", "QuestionImages", fileName);
-
-            using (var stream = new FileStream(path, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            uploadedFileNames.Add(fileName);
-        }
-
-        return uploadedFileNames;
-    }
-
-    public async Task<List<string>> UploadAnswersImagesAsync(List<IFormFile> files)
-    {
-        if (files == null)
-        {
-            throw new ArgumentNullException("Files cannot be null or empty.");
-        }
-
-        var uploadedFileNames = new List<string>();
-
-        foreach (var file in files)
-        {
-            if (file.Length == 0 || file.Length > 1024 * 1024 * 40)
-            {
-                throw new ArgumentException("Each file must be an image with a size up to 40 MB.");
-            }
-
-            var fileName = Guid.NewGuid() + file.FileName;
-
-            var path = Directory.GetCurrentDirectory();
-
-            path = Path.Combine(path, "Source", "Images", "AnswersImages", fileName);
-
-            using (var stream = new FileStream(path, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            uploadedFileNames.Add(fileName);
-        }
-
-        return uploadedFileNames;
     }
 
     public async Task<UserFiles> DownloadFileAsync(string fileName)

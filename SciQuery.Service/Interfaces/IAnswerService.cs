@@ -10,7 +10,7 @@ public interface IAnswerService
     Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId);
     Task<AnswerDto> GetByIdAsync(int id);
     Task<AnswerDto> CreateAsync(AnswerForCreateDto answer);
-    Task<List<string>> CreateImages(List<IFormFile> files);
+    Task<string> CreateImages(IFormFile file);
     Task UpdateAsync(int id, AnswerForUpdateDto answer);
     Task DeleteAsync(int id);
 }

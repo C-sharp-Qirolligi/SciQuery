@@ -48,7 +48,7 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateQuestion([FromBody] QuestionForCreateDto question)
+    public async Task<IActionResult> Post([FromBody] QuestionForCreateDto question)
     {
         // Foydalanuvchini topish
             var user = await _userManager.GetUserAsync(User)
@@ -70,10 +70,11 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
                new { id = createdQuestion.Id }, createdQuestion);
     }
 
-    [HttpPost("UploadImages")]
-    public async Task<ActionResult> UploadFile(List<IFormFile> files)
+    [HttpPost("upload-image")]
+    [Authorize]
+    public async Task<ActionResult> UploadFile( IFormFile file)
     {
-        var result = await _questionService.CreateImages(files);
+        var result = await _questionService.CreateImages(file);
         return Ok(result);
     }
 

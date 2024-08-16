@@ -125,6 +125,6 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
 
     public async Task<string> CreateImage(IFormFile file)
     {
-        return await _fileManaging.UploadUserImagesAsync(file);
+        return await _fileManaging.UploadFile(file, "Source", "Images", "userImages");
     }
 }
