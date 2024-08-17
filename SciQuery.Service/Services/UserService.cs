@@ -36,9 +36,14 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
     public async Task<UserDto> GetByIdAsync(string id)
     {
         var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id) 
+            ?? throw new EntityNotFoundException();
 
         UserDto userDto = _mapper.Map<UserDto>(user);
+        
+        if(user.ProfileImagePath is not null)
+            userDto.Image = await fileManaging.DownloadFileAsync(user.ProfileImagePath,"UserImages");
+        
         return userDto;
     }
 

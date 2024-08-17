@@ -144,7 +144,7 @@ public class QuestionService(SciQueryDbContext dbContext,
 
         foreach (var imagePath in question.ImagePaths)
         {
-            var image = await fileManaging.DownloadFileAsync(imagePath);
+            var image = await fileManaging.DownloadFileAsync(imagePath,"QuestionImages");
             dto.Images!.Add(image);
         }
 

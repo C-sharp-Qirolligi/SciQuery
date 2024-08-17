@@ -13,7 +13,13 @@ namespace SciQuery.Service.DTOs.Answer
         public string UserId { get; set; }
         public UserDto User { get; set; }
 
-        public int Votes { get; set; }
+        public int Votes { get; set; } = 0;
         public ICollection<CommentDto> Comments { get; set; }
+        public ICollection<ImageFile> Images { get; set; }
+        public AnswerDto()
+        {
+            Images = new List<ImageFile>();
+            Comments = new List<CommentDto>();
+        }
     }
 }

@@ -7,5 +7,5 @@ public interface IFileManagingService
 {
     Task<string> UploadFile(IFormFile file,params string[] imagePath);
 
-    Task<UserFiles> DownloadFileAsync(string path);
+    Task<ImageFile> DownloadFileAsync(string fileName,string filePath);
 }

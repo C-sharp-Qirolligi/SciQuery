@@ -13,7 +13,7 @@ public class QuestionDto
     public string Title { get; set; }
     public string Body { get; set; }
     public int Votes { get; set; } = 0;
-    public List<UserFiles>? Images { get; set; }
+    public List<ImageFile>? Images { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime UpdatedDate { get; set; }
     public string UserId { get; set; }

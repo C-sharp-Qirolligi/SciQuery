@@ -45,13 +45,13 @@ public class FileMangingService(FileExtensionContentTypeProvider fileExtension) 
         return fileName;
     }
 
-    public async Task<UserFiles> DownloadFileAsync(string fileName)
+    public async Task<ImageFile> DownloadFileAsync(string fileName,string filePath)
     {
         var path = Path.Combine(Directory.GetCurrentDirectory(), "Source");
 
-        if (File.Exists(Path.Combine(path, "Images/QuestionImages", fileName)))
+        if (File.Exists(Path.Combine(path, "Images",filePath, fileName)))
         {
-            path = Path.Combine(path, "images/questionImages", fileName);
+            path = Path.Combine(path, "images",filePath, fileName);
         }
         else
         {
@@ -65,7 +65,7 @@ public class FileMangingService(FileExtensionContentTypeProvider fileExtension) 
 
         var bytes = await System.IO.File.ReadAllBytesAsync(path);
 
-        var image = new UserFiles(bytes, contentType, Path.GetFileName(path));
+        var image = new ImageFile(bytes, contentType, Path.GetFileName(path));
         return image;
     }
 }
