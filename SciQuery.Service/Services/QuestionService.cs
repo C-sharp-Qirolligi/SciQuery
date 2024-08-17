@@ -13,7 +13,11 @@ using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
-public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileManagingService fileManaging, ICommentService commentService) : IQuestionService
+public class QuestionService(SciQueryDbContext dbContext,
+    IMapper mapper,
+    IFileManagingService fileManaging,
+    ICommentService commentService)
+    : IQuestionService
 {
     private readonly SciQueryDbContext _context = dbContext
         ?? throw new ArgumentNullException(nameof(dbContext));
@@ -138,13 +142,20 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
         
         var dto = _mapper.Map<QuestionDto>(question);
 
+        foreach (var imagePath in question.ImagePaths)
+        {
+            var image = await fileManaging.DownloadFileAsync(imagePath,"QuestionImages");
+            dto.Images!.Add(image);
+        }
+
         return dto
             ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");
     }
 
     public async Task<QuestionDto> CreateAsync(QuestionForCreateDto questionCreateDto)
     {
-        // Question ob'ektini yaratish va xaritalash
+        
+        // Question ob'ektini yaratish va maplash
         var question = _mapper.Map<Question>(questionCreateDto);
         question.CreatedDate = DateTime.Now;
         question.UpdatedDate = DateTime.Now;
@@ -191,9 +202,9 @@ public class QuestionService(SciQueryDbContext dbContext,IMapper mapper, IFileMa
         return _mapper.Map<QuestionDto>(question);
     }
 
-    public async Task<List<string>> CreateImages(List<IFormFile> files)
+    public async Task<string> CreateImages(IFormFile file)
     {
-        return await _fileManaging.UploadQuestionImagesAsync(files);
+        return await _fileManaging.UploadFile(file, "Source", "Images", "QuestionImages");
     }
 
     public async Task UpdateAsync(int id, QuestionForUpdateDto questionUpdateDto)

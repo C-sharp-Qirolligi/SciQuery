@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace SciQuery.Service.DTOs.User
 {
-    public class UserFiles
+    public class ImageFile
     {
         public byte[] Bytes { get; set; }
         public string ContentType { get; set; }
         public string FileName { get; set; }
-        public UserFiles()
+        public ImageFile()
         {
 
         }
-        public UserFiles(byte[] bytes, string contentType, string fileName)
+        public ImageFile(byte[] bytes, string contentType, string fileName)
         {
             Bytes = bytes;
             ContentType = contentType;

@@ -56,9 +56,9 @@ namespace SciQuery.Controllers
         }
 
         [HttpPost("UploadImages")]
-        public async Task<ActionResult> UploadFile(List<IFormFile> files)
+        public async Task<ActionResult> UploadFile(IFormFile file)
         {
-            var result = await _answerService.CreateImages(files);
+            var result = await _answerService.CreateImages(file);
             return Ok(result);
         }
 

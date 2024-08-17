@@ -12,6 +12,7 @@ using SciQuery.Service.Pagination.PaginatedList;
 using SciQuery.Service.Mappings.Extensions;
 using Microsoft.AspNetCore.SignalR;
 using SciQuery.Domain.UserModels;
+using SciQuery.Service.DTOs.User;
 
 namespace SciQuery.Service.Services;
 
@@ -47,7 +48,18 @@ public class AnswerService(SciQueryDbContext context,
             .AsNoTracking()
             .ToListAsync();
 
-        return _mapper.Map<AnswerDto>(answer);
+        var dto = _mapper.Map<AnswerDto>(answer);
+
+        var images = new List<ImageFile>();
+
+        foreach (var imagePath in answer.ImagePaths)
+        {
+            var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
+            images.Add(image);
+        }
+        dto.Images = images;
+
+        return dto;
     }
 
     public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId)
@@ -81,45 +93,6 @@ public class AnswerService(SciQueryDbContext context,
 
         return answers;
     }
-
-    //public async Task<AnswerDto> CreateAsync(AnswerForCreateDto answerCreateDto)
-    //{
-    //    var answer = _mapper.Map<Answer>(answerCreateDto);
-    //    answer.CreatedDate = DateTime.Now;
-    //    answer.UpdatedDate = DateTime.Now;
-
-    //    _context.Answers.Add(answer);
-    //    await _context.SaveChangesAsync();
-
-    //    return _mapper.Map<AnswerDto>(answer);
-    //}
-    //public async Task<AnswerDto> CreateAsync(AnswerForCreateDto answerCreateDto)
-    //{
-    //    var answer = _mapper.Map<Answer>(answerCreateDto);
-    //    answer.CreatedDate = DateTime.Now;
-    //    answer.UpdatedDate = DateTime.Now;
-
-    //    _context.Answers.Add(answer);
-    //    await _context.SaveChangesAsync();
-
-    //    var question = await _context.Questions
-    //        .Include(q => q.User)
-    //        .FirstOrDefaultAsync(q => q.Id == answer.QuestionId);
-
-    //    if (question != null)
-    //    {
-    //        var userId = question.User.Id;
-    //        Console.WriteLine($"User ID for notification: {userId}");
-
-    //        await _hubContext.Clients.User(userId)
-    //            .SendAsync("ReceiveNotification", $"Sizning savolingizga yangi javob qo'shildi!");
-    //        //await _hubContext.Clients
-    //        //    .All
-    //        //    .SendAsync("ReceiveNotification", $"Sizning savolingizga yangi javob qo'shildi!");
-
-    //    }
-    //    return _mapper.Map<AnswerDto>(answer);
-    //}
     public async Task<AnswerDto> CreateAsync(AnswerForCreateDto answerCreateDto)
     {
         var answer = _mapper.Map<Answer>(answerCreateDto);
@@ -144,9 +117,9 @@ public class AnswerService(SciQueryDbContext context,
     }
 
 
-    public async Task<List<string>> CreateImages(List<IFormFile> files)
+    public async Task<string> CreateImages(IFormFile file)
     {
-        return await _fileManaging.UploadAnswersImagesAsync(files);
+        return await _fileManaging.UploadFile(file,"Source","Images","AnswerImages");
     }
 
     public async Task UpdateAsync(int id, AnswerForUpdateDto answerUpdateDto)

@@ -5,11 +5,7 @@ namespace SciQuery.Service.Interfaces;
 
 public interface IFileManagingService
 {
-    Task<string> UploadUserImagesAsync(IFormFile file);
+    Task<string> UploadFile(IFormFile file,params string[] imagePath);
 
-    Task<List<string>> UploadQuestionImagesAsync(List<IFormFile> files);
-
-    Task<List<string>> UploadAnswersImagesAsync(List<IFormFile> files);
-
-    Task<UserFiles> DownloadFileAsync(string path);
+    Task<ImageFile> DownloadFileAsync(string fileName,string filePath);
 }
