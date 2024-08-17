@@ -52,7 +52,7 @@ public class QuestionService(SciQueryDbContext dbContext,
                   q => q.Id,
                   (r, q) => q)
             .AsNoTracking()
-            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider,1,15);
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, queryParams.pageNumber, queryParams.pageSize);
 
         return questions;
     }
@@ -99,7 +99,7 @@ public class QuestionService(SciQueryDbContext dbContext,
 
         var result = await query
             .Include(a => a.Answers)
-            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, 1, 15);
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, queryParams.pageNumber, queryParams.pageSize);
         
         var questionIds = await query
             .Select(q => q.Id)
@@ -142,7 +142,7 @@ public class QuestionService(SciQueryDbContext dbContext,
         
         var dto = _mapper.Map<QuestionDto>(question);
 
-        if(question.ImagePaths == null || question.ImagePaths.Count > 0)
+        if(question.ImagePaths == null || question.ImagePaths.Count < 1)
         {
             return dto;
         }

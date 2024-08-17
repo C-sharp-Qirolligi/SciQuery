@@ -62,7 +62,7 @@ public class AnswerService(SciQueryDbContext context,
         return dto;
     }
 
-    public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId)
+    public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, int pageNumber, int pageSize)
     {
         // Step 1: Fetch all answers for the given question
         var answers = await _context.Answers
@@ -70,7 +70,7 @@ public class AnswerService(SciQueryDbContext context,
             .Where(a => a.QuestionId == questionId)
             .OrderBy(a => a.Id)
             .AsNoTracking()
-            .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, 1, 15);
+            .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, pageNumber, pageSize);
 
         // Step 2: Fetch comments for all answers
         var answerIds = answers.Data

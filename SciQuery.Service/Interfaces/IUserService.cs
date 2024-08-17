@@ -5,7 +5,7 @@ using SciQuery.Service.Pagination.PaginatedList;
 namespace SciQuery.Service.Interfaces;
 public interface IUserService
 {
-    Task<PaginatedList<UserDto>> GetAllAsync();
+    Task<PaginatedList<UserDto>> GetAllAsync(int pageNumber, int pageSize);
     Task<UserDto> GetByIdAsync(string id);
     Task<UserDto> CreateAsync(UserForCreateDto userCreateDto);
 

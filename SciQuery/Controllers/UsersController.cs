@@ -23,9 +23,9 @@ namespace SciQuery.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers(int pageNumber, int pageSize)
         {
-            var users = await _userService.GetAllAsync();
+            var users = await _userService.GetAllAsync(pageNumber, pageSize);
             return Ok(users);
         }
 
