@@ -142,6 +142,11 @@ public class QuestionService(SciQueryDbContext dbContext,
         
         var dto = _mapper.Map<QuestionDto>(question);
 
+        if(question.ImagePaths == null || question.ImagePaths.Count > 0)
+        {
+            return dto;
+        }
+
         foreach (var imagePath in question.ImagePaths)
         {
             var image = await fileManaging.DownloadFileAsync(imagePath,"QuestionImages");

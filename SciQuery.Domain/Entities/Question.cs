@@ -18,6 +18,7 @@ public class Question
     public virtual ICollection<QuestionTag> QuestionTags { get; set; }
     public Question()
     {
+        ImagePaths = new List<string>();
         Answers = new List<Answer>();
         Comments = new List<Comment>();
         QuestionTags = new List<QuestionTag>();
