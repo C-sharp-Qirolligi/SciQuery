@@ -13,6 +13,7 @@ using SciQuery.Service.Mappings.Extensions;
 using Microsoft.AspNetCore.SignalR;
 using SciQuery.Domain.UserModels;
 using SciQuery.Service.DTOs.User;
+using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
@@ -62,54 +63,84 @@ public class AnswerService(SciQueryDbContext context,
         return dto;
     }
 
-    public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, int pageNumber, int pageSize)
+    //public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, AnswerQueryParameters answerQueryParameters)
+    //{
+
+    //    var answers = await _context.Answers
+    //        .Include(a => a.User) 
+    //        .Where(a => a.QuestionId == questionId)
+    //        .OrderBy(a => a.Id)
+    //        .AsNoTracking()
+    //        .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, answerQueryParameters.pageNumber ?? 1, answerQueryParameters.pageSize ?? 15);
+
+    //    var answerIds = answers.Data
+    //        .Select(a => a.Id)
+    //        .ToList();
+
+    //    var comments = await _context.Comments
+    //        .Include(c => c.User)
+    //        .Where(c => answerIds.Contains(c.PostId) && c.Post == PostType.Answer)
+    //        .ProjectTo<CommentDto>(_mapper.ConfigurationProvider)
+    //        .ToListAsync();
+
+    //    var answerImageTasks = answers.Data.Select(async answerDto =>
+    //    {
+    //        var answer = await _context.Answers
+    //            .Where(a => a.Id == answerDto.Id)
+    //            .Select(a => new { a.ImagePaths })
+    //            .FirstOrDefaultAsync();
+
+    //        var images = new List<ImageFile>();
+
+    //        foreach (var imagePath in answer?.ImagePaths ?? Enumerable.Empty<string>())
+    //        {
+    //            var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
+    //            images.Add(image);
+    //        }
+
+    //        answerDto.Images = images;
+    //    });
+
+    //    // Await all image fetching tasks
+    //    await Task.WhenAll(answerImageTasks);
+
+    //    // Step 4: Associate comments with their respective answers
+    //    foreach (var answer in answers.Data)
+    //    {
+    //        answer.Comments = comments
+    //            .Where(c => c.PostId == answer.Id)
+    //            .ToList();
+    //    }
+
+    //    return answers;
+    //}
+
+    public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, AnswerQueryParameters answerQueryParameters)
     {
-        // Step 1: Fetch all answers for the given question with pagination
+        var pageNumber = answerQueryParameters.pageNumber ?? 1;
+        var pageSize = answerQueryParameters.pageSize ?? 15;
+
+        // Fetch paginated answers
         var answers = await _context.Answers
-            .Include(a => a.User) // Include the user who posted the answer
+            .Include(a => a.User)
             .Where(a => a.QuestionId == questionId)
             .OrderBy(a => a.Id)
             .AsNoTracking()
             .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, pageNumber, pageSize);
 
-        // Step 2: Fetch comments for all answers
-        var answerIds = answers.Data
-            .Select(a => a.Id)
-            .ToList();
+        var answerIds = answers.Data.Select(a => a.Id).ToList();
 
+        // Fetch comments
         var comments = await _context.Comments
             .Include(c => c.User)
             .Where(c => answerIds.Contains(c.PostId) && c.Post == PostType.Answer)
             .ProjectTo<CommentDto>(_mapper.ConfigurationProvider)
             .ToListAsync();
 
-        var answerImageTasks = answers.Data.Select(async answerDto =>
-        {
-            var answer = await _context.Answers
-                .Where(a => a.Id == answerDto.Id)
-                .Select(a => new { a.ImagePaths })
-                .FirstOrDefaultAsync();
+        // Fetch images in a separate method
+        await FetchImagesForAnswers(answers.Data);
 
-            var images = new List<ImageFile>();
-
-
-
-
-
-
-            foreach (var imagePath in answer?.ImagePaths ?? Enumerable.Empty<string>())
-            {
-                var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
-                images.Add(image);
-            }
-
-            answerDto.Images = images;
-        });
-
-        // Await all image fetching tasks
-        await Task.WhenAll(answerImageTasks);
-
-        // Step 4: Associate comments with their respective answers
+        // Associate comments with their respective answers
         foreach (var answer in answers.Data)
         {
             answer.Comments = comments
@@ -119,6 +150,31 @@ public class AnswerService(SciQueryDbContext context,
 
         return answers;
     }
+
+    private async Task FetchImagesForAnswers(IEnumerable<AnswerDto> answers)
+    {
+        foreach (var answerDto in answers)
+        {
+            var answer = await _context.Answers
+                .Where(a => a.Id == answerDto.Id)
+                .Select(a => new { a.ImagePaths })
+                .FirstOrDefaultAsync();
+
+            var images = new List<ImageFile>();
+
+            if (answer != null)
+            {
+                foreach (var imagePath in answer.ImagePaths ?? Enumerable.Empty<string>())
+                {
+                    var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
+                    images.Add(image);
+                }
+            }
+
+            answerDto.Images = images;
+        }
+    }
+
     public async Task<AnswerDto> CreateAsync(AnswerForCreateDto answerCreateDto)
     {
         var answer = _mapper.Map<Answer>(answerCreateDto);
