@@ -137,6 +137,7 @@ public class QuestionService(SciQueryDbContext dbContext,
 
         question.Comments = await _context.Comments
             .Where(c => c.Post == PostType.Question && c.PostId == id)
+            .Include(c => c.User)
             .AsNoTracking()
             .ToListAsync();
         

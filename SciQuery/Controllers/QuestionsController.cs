@@ -21,7 +21,7 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
     private readonly IQuestionService _questionService = questionService;
     private readonly UserManager<User> _userManager = userManager;
 
-    [HttpGet("get-with-tags")]
+    [HttpGet("get-by-tags")]
     public async Task<ActionResult> GetQuestionsByTags([FromBody] QuestionQueryParameters queryParameters)
     {
         var result = await _questionService.GetQuestionsByTags(queryParameters);
