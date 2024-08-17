@@ -92,6 +92,11 @@ public class AnswerService(SciQueryDbContext context,
 
             var images = new List<ImageFile>();
 
+
+
+
+
+
             foreach (var imagePath in answer?.ImagePaths ?? Enumerable.Empty<string>())
             {
                 var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
