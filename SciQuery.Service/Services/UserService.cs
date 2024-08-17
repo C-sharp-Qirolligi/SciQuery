@@ -38,9 +38,6 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
         var user = await _context.Users
             .FirstOrDefaultAsync(x => x.Id == id);
 
-        //var user = await _userManager.FindByIdAsync(id)
-        //    ?? throw new EntityNotFoundException($"User with id : {id} is not found!");
-
         UserDto userDto = _mapper.Map<UserDto>(user);
         return userDto;
     }
@@ -79,15 +76,6 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
     }
     public async Task<bool> DeleteAsync(string id)
     {
-        //var user = await _context.Users
-        //    .FirstOrDefaultAsync(x => x.Id == id);
-        //if (user == null)
-        //{
-        //    return false;
-        //}
-        //_context.Users.Remove(user);
-        //await _context.SaveChangesAsync();
-        //return true;
         try
         {
             var user = await _context.Users
@@ -98,7 +86,6 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
                 return false;
             }
             ///Manually deleting user answers because does not delete user with answers
-            //
             var answers = await _context.Answers
                 .Where(a => a.UserId == user.Id)
                 .Select(a => a.Id)
@@ -116,12 +103,9 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
         }
         catch (Exception ex)
         {
-            // Xatolikni loglash
-            // _logger.LogError(ex, "Error occurred while deleting user.");
             throw; // Xatolikni yuqoriga qaytarish
         }
     }
-
 
     public async Task<string> CreateImage(IFormFile file)
     {

@@ -1,4 +1,5 @@
-﻿using SciQuery.Domain.Entities;
+﻿using Microsoft.AspNetCore.Http;
+using SciQuery.Domain.Entities;
 using SciQuery.Service.DTOs.Answer;
 using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.DTOs.Tag;
@@ -12,7 +13,7 @@ public class QuestionDto
     public string Title { get; set; }
     public string Body { get; set; }
     public int Votes { get; set; } = 0;
-    public List<string?>? ImagePath { get; set; }
+    public List<UserFiles>? Images { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime UpdatedDate { get; set; }
     public string UserId { get; set; }
@@ -20,4 +21,11 @@ public class QuestionDto
     public ICollection<AnswerDto> Answers { get; set; }
     public ICollection<CommentDto> Comments { get; set; }
     public ICollection<string> Tags {  get; set; }
+    public QuestionDto()
+    {
+        Images = [];
+        Answers = [];
+        Comments = [];
+        Tags = [];
+    }
 }

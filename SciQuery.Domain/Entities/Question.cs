@@ -8,7 +8,7 @@ public class Question
     public string? Title { get; set; }
     public string? Body { get; set; }
     public int Votes { get; set; } = 0;
-    public List<string?>? ImagePath { get; set; }
+    public List<string>? ImagePaths { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime? UpdatedDate { get; set; } = DateTime.Now;
     public string UserId { get; set; }

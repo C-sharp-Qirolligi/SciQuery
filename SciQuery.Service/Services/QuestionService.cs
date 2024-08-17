@@ -142,6 +142,12 @@ public class QuestionService(SciQueryDbContext dbContext,
         
         var dto = _mapper.Map<QuestionDto>(question);
 
+        foreach (var imagePath in question.ImagePaths)
+        {
+            var image = await fileManaging.DownloadFileAsync(imagePath);
+            dto.Images!.Add(image);
+        }
+
         return dto
             ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");
     }
