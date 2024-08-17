@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Domain.UserModels;
 using SciQuery.Infrastructure.Persistance.DbContext;
@@ -25,11 +24,11 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
     private readonly SciQueryDbContext _context = context 
        ?? throw new ArgumentNullException(nameof(context));
 
-    public async Task<PaginatedList<UserDto>> GetAllAsync()
+    public async Task<PaginatedList<UserDto>> GetAllAsync(int pageNumber, int pageSize)
     {
         var users = await _userManager.Users
             .AsNoTracking()
-            .ToPaginatedList<UserDto, User>(_mapper.ConfigurationProvider, 1, 15);
+            .ToPaginatedList<UserDto, User>(_mapper.ConfigurationProvider, pageNumber, pageSize);
         return users;
     }
 

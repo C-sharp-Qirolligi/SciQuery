@@ -55,7 +55,8 @@ public class TagService(SciQueryDbContext context , IMapper mapper) : ITagServic
             }
         }
 
-        var result = await tags.ToPaginatedList<TagDto, Tag>(_mapper.ConfigurationProvider, 1, 15);
+        var result = await tags
+            .ToPaginatedList<TagDto, Tag>(_mapper.ConfigurationProvider, queryParams.PageNumber, queryParams.PageSize);
         return result;
     }
 
