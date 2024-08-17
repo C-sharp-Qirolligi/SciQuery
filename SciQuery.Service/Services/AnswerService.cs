@@ -64,7 +64,7 @@ public class AnswerService(SciQueryDbContext context,
 
     public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, int pageNumber, int pageSize)
     {
-        // Step 1: Fetch all answers for the given question
+        // Step 1: Fetch all answers for the given question with pagination
         var answers = await _context.Answers
             .Include(a => a.User) // Include the user who posted the answer
             .Where(a => a.QuestionId == questionId)
@@ -78,12 +78,33 @@ public class AnswerService(SciQueryDbContext context,
             .ToList();
 
         var comments = await _context.Comments
-            .Include(c => c.User) // Include the user who posted the comment
+            .Include(c => c.User)
             .Where(c => answerIds.Contains(c.PostId) && c.Post == PostType.Answer)
             .ProjectTo<CommentDto>(_mapper.ConfigurationProvider)
             .ToListAsync();
 
-        // Step 3: Associate comments with their respective answers
+        var answerImageTasks = answers.Data.Select(async answerDto =>
+        {
+            var answer = await _context.Answers
+                .Where(a => a.Id == answerDto.Id)
+                .Select(a => new { a.ImagePaths })
+                .FirstOrDefaultAsync();
+
+            var images = new List<ImageFile>();
+
+            foreach (var imagePath in answer?.ImagePaths ?? Enumerable.Empty<string>())
+            {
+                var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
+                images.Add(image);
+            }
+
+            answerDto.Images = images;
+        });
+
+        // Await all image fetching tasks
+        await Task.WhenAll(answerImageTasks);
+
+        // Step 4: Associate comments with their respective answers
         foreach (var answer in answers.Data)
         {
             answer.Comments = comments
