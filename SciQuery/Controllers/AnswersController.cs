@@ -55,7 +55,8 @@ namespace SciQuery.Controllers
             return CreatedAtAction(nameof(GetAnswerById), new { id = createdAnswer.Id }, createdAnswer);
         }
 
-        [HttpPost("UploadImages")]
+        [HttpPost("upload-image")]
+        [Authorize]
         public async Task<ActionResult> UploadFile(IFormFile file)
         {
             var result = await _answerService.CreateImages(file);

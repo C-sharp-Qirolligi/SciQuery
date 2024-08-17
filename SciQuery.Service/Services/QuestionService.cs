@@ -142,7 +142,7 @@ public class QuestionService(SciQueryDbContext dbContext,
         
         var dto = _mapper.Map<QuestionDto>(question);
 
-        if(question.ImagePaths == null || question.ImagePaths.Count > 0)
+        if(question.ImagePaths == null || question.ImagePaths.Count < 1)
         {
             return dto;
         }
