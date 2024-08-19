@@ -12,8 +12,24 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
     private readonly SciQueryDbContext _dbContext = dbContext;
     private readonly IReputationService _reputationService = reputationService;
 
-    public async Task DownVote(string userId, int postId, PostType postType)
+    public async Task<(bool,string)> DownVote(string userId, int postId, PostType postType)
     {
+        bool check = false;
+
+        if(postType is PostType.Answer)
+        {
+            check = await CheckUserHasVotedAnswer(userId, postId);
+        }
+        else if(postType is PostType.Question)
+        {
+            check = await CheckUserHasVotedQuestion(userId, postId);
+        }
+
+        if (check)
+        {
+            return (false, "You voted already!");
+        }
+
         if (postType is PostType.Question)
         {
             await VoteQuestion(postId, -1);
@@ -21,14 +37,26 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
         }
         else if (postType is PostType.Answer)
         {
-            await VoteAnswer(postId, -1);
+            await VoteAnswer(userId,postId, -1);
             await _reputationService.DownVotedAnswerReputation(userId);
         }
         await _dbContext.SaveChangesAsync();
+
+        return (true, "Corrextly!");
     }
 
-    public async Task UpVote(string userId, int postId,PostType postType)
+    public async Task<(bool,string)> UpVote(string userId, int postId,PostType postType)
     {
+        bool check = false;
+        if (postType is PostType.Answer)
+        {
+            check = await CheckUserHasVotedAnswer(userId, postId);
+        }
+        else if (postType is PostType.Question)
+        {
+            check = await CheckUserHasVotedQuestion(userId, postId);
+        }
+
         if (postType is PostType.Question)
         {
             await VoteQuestion(postId, 1);
@@ -36,24 +64,46 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
         }
         else if (postType is PostType.Answer)
         {
-            await VoteAnswer(postId, 1);
+            await VoteAnswer(userId,postId, 1);
             await _reputationService.UpVotedAnswerReputation(userId);
         }
         await _dbContext.SaveChangesAsync();
+
+        return (true, "Correctly!");
     }
     private async Task VoteQuestion(int postId,int point)
     {
         var post = await _dbContext.Questions.FirstOrDefaultAsync(c => c.Id == postId)
                 ?? throw new EntityNotFoundException();
         post.Votes += point;
+
         _dbContext.Update(post);
 
     }
-    private async Task VoteAnswer(int postId, int point)
+    private async Task VoteAnswer(string userId, int postId, int point)
     {
-        var post = await _dbContext.Questions.FirstOrDefaultAsync(c => c.Id == postId)
+        var post = await _dbContext.Answers.FirstOrDefaultAsync(c => c.Id == postId)
                ?? throw new EntityNotFoundException();
         post.Votes += point;
+
+        post.VotedUsersIds ??= new();
+        
+        post.VotedUsersIds.Add(userId);
+
         _dbContext.Update(post);
+    }
+    private async Task<bool> CheckUserHasVotedAnswer(string userId,int postId)
+    {
+        var post = await _dbContext.Answers.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
+            ?? throw new EntityNotFoundException();
+
+        return post.VotedUsersIds is not null && post.VotedUsersIds!.Any(id => id == userId);
+    }
+    private async Task<bool> CheckUserHasVotedQuestion(string userId, int postId)
+    {
+        var post = await _dbContext.Questions.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
+            ?? throw new EntityNotFoundException();
+
+        return post.VotedUsersIds is not null && post.VotedUsersIds!.Any(id => id == userId);
     }
 }

@@ -7,7 +7,7 @@ public class Answer
     public string? Body { get; set; }
     public int Votes { get; set; } = 0;
     public List<string>? ImagePaths { get; set; }
-    public List<string>? VotedUserIds { get; set; }
+    public List<string>? VotedUsersIds { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime? UpdatedDate { get; set; } = DateTime.Now;
     public int QuestionId { get; set; }
@@ -19,7 +19,7 @@ public class Answer
     public Answer()
     {
         ImagePaths = new List<string>();
-        VotedUserIds = new List<string>();
+        HasVotedUsersIds = new List<string>();
     }
 
 }

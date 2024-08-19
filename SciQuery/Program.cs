@@ -40,8 +40,10 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IAnswerService, AnswerService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddAutoMapper(typeof(UserMappings).Assembly);
+builder.Services.AddScoped<IVoteService, VoteService>();    
+builder.Services.AddScoped<IReputationService, ReputationService>();    
 
+builder.Services.AddAutoMapper(typeof(UserMappings).Assembly);
 
 //Identity Usermanager and rolemanager
 builder.Services.AddDbContext<SciQueryDbContext>();

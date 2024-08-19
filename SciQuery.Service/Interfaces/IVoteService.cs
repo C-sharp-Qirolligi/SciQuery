@@ -4,6 +4,6 @@ namespace SciQuery.Service.Interfaces;
 
 public interface IVoteService
 {
-    Task UpVote(string userId,int postId,PostType postType);
-    Task DownVote(string userId,int postId,PostType postType);
+    Task<(bool, string)> UpVote(string userId,int postId,PostType postType);
+    Task<(bool, string)> DownVote(string userId,int postId,PostType postType);
 }
