@@ -7,6 +7,7 @@ using SciQuery.Domain.Exceptions;
 using SciQuery.Domain.UserModels;
 using SciQuery.Service.DTOs.Answer;
 using SciQuery.Service.Interfaces;
+using SciQuery.Service.QueryParams;
 using SciQuery.Service.Services;
 
 namespace SciQuery.Controllers
@@ -30,9 +31,9 @@ namespace SciQuery.Controllers
         }
 
         [HttpGet("question/{questionId}")]
-        public async Task<IActionResult> GetAllAnswersByQuestionId(int questionId, int pageNumber, int pageSize)
+        public async Task<IActionResult> GetAllAnswersByQuestionId(int questionId, [FromQuery] AnswerQueryParameters answerQueryParameters)
         {
-            var answers = await _answerService.GetAllAnswersByQuestionIdAsync(questionId, pageNumber, pageSize);
+            var answers = await _answerService.GetAllAnswersByQuestionIdAsync(questionId, answerQueryParameters);
             return Ok(answers);
         }
 
