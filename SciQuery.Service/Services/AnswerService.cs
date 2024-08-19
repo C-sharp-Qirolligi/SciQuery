@@ -52,6 +52,11 @@ public class AnswerService(SciQueryDbContext context,
         var dto = _mapper.Map<AnswerDto>(answer);
 
         var images = new List<ImageFile>();
+        
+        if(answer.ImagePaths is null )
+        {
+            return dto;
+        }
 
         foreach (var imagePath in answer.ImagePaths)
         {
@@ -62,63 +67,8 @@ public class AnswerService(SciQueryDbContext context,
 
         return dto;
     }
-
-    //public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, AnswerQueryParameters answerQueryParameters)
-    //{
-
-    //    var answers = await _context.Answers
-    //        .Include(a => a.User) 
-    //        .Where(a => a.QuestionId == questionId)
-    //        .OrderBy(a => a.Id)
-    //        .AsNoTracking()
-    //        .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, answerQueryParameters.pageNumber ?? 1, answerQueryParameters.pageSize ?? 15);
-
-    //    var answerIds = answers.Data
-    //        .Select(a => a.Id)
-    //        .ToList();
-
-    //    var comments = await _context.Comments
-    //        .Include(c => c.User)
-    //        .Where(c => answerIds.Contains(c.PostId) && c.Post == PostType.Answer)
-    //        .ProjectTo<CommentDto>(_mapper.ConfigurationProvider)
-    //        .ToListAsync();
-
-    //    var answerImageTasks = answers.Data.Select(async answerDto =>
-    //    {
-    //        var answer = await _context.Answers
-    //            .Where(a => a.Id == answerDto.Id)
-    //            .Select(a => new { a.ImagePaths })
-    //            .FirstOrDefaultAsync();
-
-    //        var images = new List<ImageFile>();
-
-    //        foreach (var imagePath in answer?.ImagePaths ?? Enumerable.Empty<string>())
-    //        {
-    //            var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
-    //            images.Add(image);
-    //        }
-
-    //        answerDto.Images = images;
-    //    });
-
-    //    // Await all image fetching tasks
-    //    await Task.WhenAll(answerImageTasks);
-
-    //    // Step 4: Associate comments with their respective answers
-    //    foreach (var answer in answers.Data)
-    //    {
-    //        answer.Comments = comments
-    //            .Where(c => c.PostId == answer.Id)
-    //            .ToList();
-    //    }
-
-    //    return answers;
-    //}
-
     public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, AnswerQueryParameters answerQueryParameters)
     {
-        var pageNumber = answerQueryParameters.pageNumber ?? 1;
-        var pageSize = answerQueryParameters.pageSize ?? 15;
 
         // Fetch paginated answers
         var answers = await _context.Answers
@@ -126,7 +76,7 @@ public class AnswerService(SciQueryDbContext context,
             .Where(a => a.QuestionId == questionId)
             .OrderBy(a => a.Id)
             .AsNoTracking()
-            .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, pageNumber, pageSize);
+            .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, answerQueryParameters.PageNumber, answerQueryParameters.PageSize);
 
         var answerIds = answers.Data.Select(a => a.Id).ToList();
 
@@ -153,25 +103,23 @@ public class AnswerService(SciQueryDbContext context,
 
     private async Task FetchImagesForAnswers(IEnumerable<AnswerDto> answers)
     {
-        foreach (var answerDto in answers)
+        foreach(var answer in answers)
         {
-            var answer = await _context.Answers
-                .Where(a => a.Id == answerDto.Id)
-                .Select(a => new { a.ImagePaths })
-                .FirstOrDefaultAsync();
 
-            var images = new List<ImageFile>();
-
-            if (answer != null)
+            if (answer == null)
             {
-                foreach (var imagePath in answer.ImagePaths ?? Enumerable.Empty<string>())
-                {
-                    var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
-                    images.Add(image);
-                }
+                continue;
             }
 
-            answerDto.Images = images;
+            var images = new List<ImageFile>();
+            
+            foreach (var imagePath in answer.ImagePaths ?? Enumerable.Empty<string>())
+            {
+                var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
+                images.Add(image);
+            }
+
+            answer.Images = images;
         }
     }
 

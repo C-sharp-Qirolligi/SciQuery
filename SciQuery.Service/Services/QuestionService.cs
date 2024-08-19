@@ -4,12 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
-using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.DTOs.Question;
 using SciQuery.Service.Interfaces;
 using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
 using SciQuery.Service.QueryParams;
+using System.Reflection.Metadata.Ecma335;
 
 namespace SciQuery.Service.Services;
 
@@ -29,15 +29,20 @@ public class QuestionService(SciQueryDbContext dbContext,
     private readonly ICommentService _commentService  = commentService;
 
 
-    public async Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(QuestionQueryParameters queryParams)
+    public async Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(int id)
     {
-        if(queryParams.Tags == null || queryParams.Tags.Count == 0)
+        var tags = await _context.Questions
+                .Where(x => x.Id == id)
+                .SelectMany(x => x.QuestionTags.Select(qt => qt.Tag))
+                .ToListAsync() ?? throw new EntityNotFoundException();
+
+        if (tags == null || tags.Count == 0)
         {
             throw new Exception();
         }
 
         var result = _context.Tags
-            .Where(x => queryParams.Tags.Contains(x.Name))
+            .Where(x => tags.Contains(x))
             .Join(_context.QuestionTags,
                 t => t.Id,
                 qt => qt.TagId,
@@ -52,7 +57,7 @@ public class QuestionService(SciQueryDbContext dbContext,
                   q => q.Id,
                   (r, q) => q)
             .AsNoTracking()
-            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, queryParams.pageNumber, queryParams.pageSize);
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider);
 
         return questions;
     }
@@ -61,7 +66,7 @@ public class QuestionService(SciQueryDbContext dbContext,
         var query = _context.Questions
             .AsQueryable()
             .Include(q => q.User)
-            .Include(q => q.Answers)
+            .Include(q =>    q.Answers)
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
             .AsNoTracking();
@@ -98,8 +103,7 @@ public class QuestionService(SciQueryDbContext dbContext,
         }
 
         var result = await query
-            .Include(a => a.Answers)
-            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, queryParams.pageNumber, queryParams.pageSize);
+            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider, queryParams.PageNumber, queryParams.PageSize);
         
         var questionIds = await query
             .Select(q => q.Id)
@@ -150,7 +154,8 @@ public class QuestionService(SciQueryDbContext dbContext,
 
         foreach (var imagePath in question.ImagePaths)
         {
-            var image = await fileManaging.DownloadFileAsync(imagePath,"QuestionImages");
+            
+            var image = await fileManaging.DownloadFileAsync(imagePath, "QuestionImages");
             dto.Images!.Add(image);
         }
 

@@ -45,7 +45,7 @@ namespace SciQuery.Controllers
 
             return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
         }
-        [HttpPost("UploadImages")]
+        [HttpPost("upload-image")]
         public async Task<ActionResult> UploadFile(IFormFile file)
         {
             var result = await _userService.CreateImage(file);

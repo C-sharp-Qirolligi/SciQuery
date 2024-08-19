@@ -45,27 +45,28 @@ public class FileMangingService(FileExtensionContentTypeProvider fileExtension) 
         return fileName;
     }
 
-    public async Task<ImageFile> DownloadFileAsync(string fileName,string filePath)
+    public async Task<ImageFile> DownloadFileAsync(string fileName, string filePath)
     {
-        var path = Path.Combine(Directory.GetCurrentDirectory(), "Source");
+        var basePath = Path.Combine(Directory.GetCurrentDirectory(), "Source", "Images");
 
-        if (File.Exists(Path.Combine(path, "Images",filePath, fileName)))
+        var requestedFilePath = Path.Combine(basePath, filePath ?? "", fileName ?? "");
+
+        if (!File.Exists(requestedFilePath))
         {
-            path = Path.Combine(path, "images",filePath, fileName);
-        }
-        else
-        {
-            throw new FileNotFoundException("File not found.");
+            requestedFilePath = filePath == "UserImages" ? 
+                Path.Combine(basePath, "user.png") :
+                Path.Combine(basePath, "defaultImage.jpg");
         }
 
-        if (!_fileExtension.TryGetContentType(path, out string contentType))
+        if (!_fileExtension.TryGetContentType(requestedFilePath, out string contentType))
         {
             contentType = "application/octet-stream";
         }
 
-        var bytes = await System.IO.File.ReadAllBytesAsync(path);
+        var bytes = await System.IO.File.ReadAllBytesAsync(requestedFilePath);
 
-        var image = new ImageFile(bytes, contentType, Path.GetFileName(path));
+        var image = new ImageFile(bytes, contentType, Path.GetFileName(requestedFilePath));
         return image;
     }
+
 }

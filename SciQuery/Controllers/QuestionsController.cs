@@ -21,10 +21,10 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
     private readonly IQuestionService _questionService = questionService;
     private readonly UserManager<User> _userManager = userManager;
 
-    [HttpGet("get-by-tags")]
-    public async Task<ActionResult> GetQuestionsByTags([FromBody] QuestionQueryParameters queryParameters)
+    [HttpGet("get-by-tags/{id}")]
+    public async Task<ActionResult> GetQuestionsByTags(int id)
     {
-        var result = await _questionService.GetQuestionsByTags(queryParameters);
+        var result = await _questionService.GetQuestionsByTags(id);
         return Ok(result);
     }
 

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-[Authorize]
 public class NotificationHub : Hub
 {
     // Bildirishnoma yuborish metodini yaratish
+    [Authorize]
     public async Task SendNotification(string message)
     {
         // Foydalanuvchiga bildirishnoma yuborish

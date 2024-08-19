@@ -7,7 +7,5 @@ public class QuestionQueryParameters : QueryParametersBase
     public bool? NewAsc { get; set; }
     public DateTime? LastDate { get; set; }
     public ICollection<string>? Tags { get; set; }
-    public int pageNumber { get; set; }
-    public int pageSize { get; set; }
 
 }

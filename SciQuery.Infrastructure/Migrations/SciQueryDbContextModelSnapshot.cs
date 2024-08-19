@@ -233,7 +233,7 @@ namespace SciQuery.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Question", b =>

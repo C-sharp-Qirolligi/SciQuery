@@ -39,9 +39,8 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
             ?? throw new EntityNotFoundException();
 
         UserDto userDto = _mapper.Map<UserDto>(user);
-        
-        if(user.ProfileImagePath is not null)
-            userDto.Image = await fileManaging.DownloadFileAsync(user.ProfileImagePath,"UserImages");
+       
+        userDto.Image = await fileManaging.DownloadFileAsync(user.ProfileImagePath,"UserImages");
         
         return userDto;
     }
@@ -69,6 +68,7 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
 
         user.UserName = userUpdateDto.UserName;
         user.Email = userUpdateDto.Email;
+        user.ProfileImagePath = userUpdateDto.ImagePath ?? "";
 
         var result = await _userManager.UpdateAsync(user);
 

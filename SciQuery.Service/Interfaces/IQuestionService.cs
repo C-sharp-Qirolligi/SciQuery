@@ -9,7 +9,7 @@ namespace SciQuery.Service.Interfaces;
 
 public interface IQuestionService
 {
-    Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(QuestionQueryParameters queryParams);
+    Task<PaginatedList<ForEasyQestionDto>> GetQuestionsByTags(int id);
     Task<PaginatedList<ForEasyQestionDto>> GetAllAsync(QuestionQueryParameters queryParams);
     Task<QuestionDto> GetByIdAsync(int id);
 

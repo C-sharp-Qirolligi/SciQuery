@@ -8,5 +8,7 @@ namespace SciQuery.Service.QueryParams;
 
 public abstract class QueryParametersBase
 {
+    public int PageSize { get; set; } = 15;
+    public int PageNumber { get; set; } = 1;
     public string? Search { get; set; }
 }
