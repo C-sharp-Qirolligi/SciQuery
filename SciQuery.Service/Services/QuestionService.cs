@@ -78,25 +78,21 @@ public class QuestionService(SciQueryDbContext dbContext,
                     || q.Body.Contains(queryParams.Search));
         }
 
-        if (queryParams.LastDate.HasValue)
+        if (queryParams.NoAnswers.HasValue)
         {
-            query = query.Where(q => q.CreatedDate <= queryParams.LastDate.Value);
+            query = query.Where(q => q.Answers == null || q.Answers.Count <= 0);
         }
 
-        if (queryParams.AnswerMaxCount.HasValue)
+        if (queryParams.NoAcceptedAnswer.HasValue)
         {
-            query = query.Where(q => q.Answers.Count <= queryParams.AnswerMaxCount.Value);
+            query = query.Where(q => q.AcceptedAnswers == null || q.AcceptedAnswers.Count==0);
         }
 
-        if (queryParams.AnswerMinCount.HasValue)
+        if (queryParams.MostVoted.HasValue && queryParams.MostVoted == true)
         {
-            query = query.Where(q => q.Answers.Count >= queryParams.AnswerMinCount.Value);
+            query = query.OrderByDescending(x => x.Votes);
         }
-
-        if (queryParams.NewAsc.HasValue && queryParams.NewAsc == true)
-        {
-            query = query.OrderByDescending(x => x.UpdatedDate);
-        }
+        
         else
         {
             query = query.OrderBy(x => x.UpdatedDate);

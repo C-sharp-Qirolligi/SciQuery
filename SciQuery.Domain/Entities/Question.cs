@@ -10,6 +10,7 @@ public class Question
     public int Votes { get; set; } = 0;
     public List<string>? ImagePaths { get; set; }
     public List<string>? VotedUsersIds { get; set; }
+    public List<int> AcceptedAnswers { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.Now;
     public DateTime? UpdatedDate { get; set; } = DateTime.Now;
     public string UserId { get; set; }
@@ -23,6 +24,7 @@ public class Question
         Answers = new List<Answer>();
         Comments = new List<Comment>();
         QuestionTags = new List<QuestionTag>();
+        AcceptedAnswers = new List<int>();
     }
 
 }

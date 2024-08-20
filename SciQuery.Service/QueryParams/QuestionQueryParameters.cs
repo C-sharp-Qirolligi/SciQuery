@@ -2,10 +2,11 @@
 
 public class QuestionQueryParameters : QueryParametersBase
 {
-    public int? AnswerMaxCount { get; set; }
-    public int? AnswerMinCount { get; set; }
-    public bool? NewAsc { get; set; }
-    public DateTime? LastDate { get; set; }
+    public bool? NoAnswers { get; set; }
+    public bool? NoAcceptedAnswer { get; set; }
+    public bool? MostNew { get; set; }
+    public bool? MostRecently { get; set; }
+    public bool? MostVoted { get; set; }
     public ICollection<string>? Tags { get; set; }
 
 }
