@@ -32,7 +32,7 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
 
         if (postType is PostType.Question)
         {
-            await VoteQuestion(postId, -1);
+            await VoteQuestion(userId,postId, -1);
             await _reputationService.DownVotedQuestionReputation(userId);
         }
         else if (postType is PostType.Answer)
@@ -59,7 +59,7 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
 
         if (postType is PostType.Question)
         {
-            await VoteQuestion(postId, 1);
+            await VoteQuestion(userId,postId, 1);
             await _reputationService.UpVotedQuestionReputation(userId);
         }
         else if (postType is PostType.Answer)
@@ -71,11 +71,15 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
 
         return (true, "Correctly!");
     }
-    private async Task VoteQuestion(int postId,int point)
+    private async Task VoteQuestion(string userId,int postId,int point)
     {
         var post = await _dbContext.Questions.FirstOrDefaultAsync(c => c.Id == postId)
                 ?? throw new EntityNotFoundException();
         post.Votes += point;
+
+        post.VotedUsersIds ??= new();
+
+        post.VotedUsersIds.Add(userId);
 
         _dbContext.Update(post);
 
@@ -97,13 +101,13 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
         var post = await _dbContext.Answers.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
             ?? throw new EntityNotFoundException();
 
-        return post.VotedUsersIds is not null && post.VotedUsersIds!.Any(id => id == userId);
+        return post.VotedUsersIds is not null || post.VotedUsersIds!.Any(id => id == userId);
     }
     private async Task<bool> CheckUserHasVotedQuestion(string userId, int postId)
     {
         var post = await _dbContext.Questions.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
             ?? throw new EntityNotFoundException();
 
-        return post.VotedUsersIds is not null && post.VotedUsersIds!.Any(id => id == userId);
+        return post.VotedUsersIds is not null || post.VotedUsersIds!.Any(id => id == userId);
     }
 }

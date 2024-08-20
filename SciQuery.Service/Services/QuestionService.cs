@@ -123,6 +123,11 @@ public class QuestionService(SciQueryDbContext dbContext,
         {
             var comment = comments.FirstOrDefault(c => c.PostId == question.Id);
             question.CommentsCount = comment != null ? comment.Count : 0;
+            question.User.Image = await fileManaging.DownloadFileAsync(question.User.ImagePath, "UserImages");
+            if(question.User.UserName == "Sanjar1")
+            {
+                int a = 0;
+            }
         }
 
         return result;

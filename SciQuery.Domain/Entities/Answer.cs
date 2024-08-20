@@ -19,7 +19,7 @@ public class Answer
     public Answer()
     {
         ImagePaths = new List<string>();
-        HasVotedUsersIds = new List<string>();
+        VotedUsersIds = new List<string>();
     }
 
 }

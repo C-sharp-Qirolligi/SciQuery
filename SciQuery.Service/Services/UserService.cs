@@ -40,7 +40,7 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
 
         UserDto userDto = _mapper.Map<UserDto>(user);
        
-        userDto.Image = await fileManaging.DownloadFileAsync(user.ProfileImagePath,"UserImages");
+        userDto.Image = await fileManaging.DownloadFileAsync(user.ImagePath,"UserImages");
         
         return userDto;
     }
@@ -68,7 +68,7 @@ public class UserService(UserManager<User> user,IMapper mapper, SciQueryDbContex
 
         user.UserName = userUpdateDto.UserName;
         user.Email = userUpdateDto.Email;
-        user.ProfileImagePath = userUpdateDto.ImagePath ?? "";
+        user.ImagePath = userUpdateDto.ImagePath ?? "";
 
         var result = await _userManager.UpdateAsync(user);
 

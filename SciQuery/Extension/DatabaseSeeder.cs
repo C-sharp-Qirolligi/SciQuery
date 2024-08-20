@@ -47,7 +47,7 @@ public class DatabaseSeeder
                 .RuleFor(u => u.Id, f => Guid.NewGuid().ToString())
                 .RuleFor(u => u.UserName, f => f.Internet.UserName())
                 .RuleFor(u => u.Email, f => f.Internet.Email())
-                .RuleFor(u => u.ProfileImagePath, f => f.Internet.Avatar())
+                .RuleFor(u => u.ImagePath, f => f.Internet.Avatar())
                 .RuleFor(u => u.Reputation, f => f.Random.Int(0, 1000))
                 .RuleFor(u => u.CreatedDate, f => f.Date.Past(5))
                 .RuleFor(u => u.LastLogindate, f => f.Date.Recent());
