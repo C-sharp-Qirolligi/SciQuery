@@ -27,8 +27,13 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
         var result = await _questionService.GetQuestionsByTags(id);
         return Ok(result);
     }
-
+    [HttpPost("accept-answer")]
+    public async Task<IActionResult> AcceptAnswer([FromBody] QuestionDto questionDto)
+    {
+        return Ok(questionDto);
+    }
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetAllQuestions([FromQuery] QuestionQueryParameters queryParameters)
     {
         var questions = await _questionService.GetAllAsync(queryParameters);

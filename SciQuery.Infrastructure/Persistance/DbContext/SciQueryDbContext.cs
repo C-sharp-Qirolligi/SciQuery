@@ -16,19 +16,16 @@ public class SciQueryDbContext(DbContextOptions<SciQueryDbContext> options,
     public virtual DbSet<Tag> Tags { get; set; }
     public virtual DbSet<ReputationChange> ReputationChanges { get; set; }
     public virtual DbSet<QuestionTag> QuestionTags { get; set; }
+    public virtual DbSet<Notification> Notifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        
         builder.Entity<Answer>().ToTable(nameof(Answer));
-        
         builder.Entity<Tag>().ToTable(nameof(Tag));
-        
         builder.Entity<Question>().ToTable(nameof(Question));
-
         builder.Entity<QuestionTag>().ToTable(nameof(QuestionTag));
-        
         builder.Entity<ReputationChange>().ToTable(nameof(ReputationChange));
+        builder.Entity<Notification>().ToTable(nameof(Notification));
         
         
         base.OnModelCreating(builder);

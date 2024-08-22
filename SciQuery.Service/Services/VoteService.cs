@@ -57,6 +57,11 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
             check = await CheckUserHasVotedQuestion(userId, postId);
         }
 
+        if (check)
+        {
+            return (false, "You voted already!");
+        }
+
         if (postType is PostType.Question)
         {
             await VoteQuestion(userId,postId, 1);
@@ -101,13 +106,13 @@ public class VoteService(SciQueryDbContext dbContext,IReputationService reputati
         var post = await _dbContext.Answers.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
             ?? throw new EntityNotFoundException();
 
-        return post.VotedUsersIds is not null || post.VotedUsersIds!.Any(id => id == userId);
+        return post.VotedUsersIds != null && post.VotedUsersIds.Any(id => id == userId);
     }
     private async Task<bool> CheckUserHasVotedQuestion(string userId, int postId)
     {
         var post = await _dbContext.Questions.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
             ?? throw new EntityNotFoundException();
 
-        return post.VotedUsersIds is not null || post.VotedUsersIds!.Any(id => id == userId);
+        return post.VotedUsersIds != null && post.VotedUsersIds.Any(id => id == userId);
     }
 }

@@ -21,7 +21,7 @@ public class AnswerService(SciQueryDbContext context,
                             IMapper mapper, 
                             IFileManagingService fileManaging,
                             ICommentService commentService,
-                            IHubContext<NotificationHub> hubContext) : IAnswerService
+                            NotificationService notificationService) : IAnswerService
 {
     private readonly SciQueryDbContext _context = context
         ??throw new ArgumentNullException(nameof(context));
@@ -30,7 +30,7 @@ public class AnswerService(SciQueryDbContext context,
     private readonly IFileManagingService _fileManaging = fileManaging
        ?? throw new ArgumentNullException(nameof(mapper));
     private readonly ICommentService _commentService = commentService;
-    private readonly IHubContext<NotificationHub> _hubContext = hubContext;
+    private readonly NotificationService _notificationService = notificationService;
 
     public async Task<AnswerDto> GetByIdAsync(int id)
     {
@@ -139,8 +139,7 @@ public class AnswerService(SciQueryDbContext context,
 
         if (question != null)
         {
-            await _hubContext.Clients.All
-                .SendAsync("ReceiveNotification", "Sizning savolingizga yangi javob qo'shildi!");
+            await _notificationService.NotifyUser(question.UserId, "Sizning savolingizga yangi javob qo'shildi!");
         }
 
         return _mapper.Map<AnswerDto>(answer);

@@ -96,12 +96,35 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters = new TokenValidationParameters()
         {
             ValidateIssuer = true,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
             ValidateAudience = true,
             ValidIssuer = issuer,
             ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+            ClockSkew = TimeSpan.Zero
+        };
+
+        //To SignalR
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                // If the request is for our hub...
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/hubs/chat")))
+                {
+                    // Read the token out of the query string
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
+
 
 //Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -162,7 +185,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddSignalR();
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -190,14 +212,11 @@ using (var serviceScope = app.Services.CreateScope())
     if (!await roleManager.RoleExistsAsync(AppRoles.User))
     {
         await roleManager.CreateAsync(new IdentityRole(AppRoles.User));
-        await roleManager.CreateAsync(new IdentityRole(AppRoles.User));
     }
-
     if (!await roleManager.RoleExistsAsync(AppRoles.Administrator))
     {
         await roleManager.CreateAsync(new IdentityRole(AppRoles.Administrator));
     }
-
     if (!await roleManager.RoleExistsAsync(AppRoles.Master))
     {
         await roleManager.CreateAsync(new IdentityRole(AppRoles.Master));
