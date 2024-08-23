@@ -139,7 +139,15 @@ public class AnswerService(SciQueryDbContext context,
 
         if (question != null)
         {
-            await _notificationService.NotifyUser(question.UserId, "Sizning savolingizga yangi javob qo'shildi!");
+            Notification notification = new Notification()
+            {
+                UserId = question.UserId,
+                IsRead = false,
+                TimeSpan = DateTime.UtcNow,
+                Message = $"Savolingizga {answer.User.UserName} javob berildi"
+            };
+            await _notificationService.NotifyUser(notification.UserId, notification.Message);
+            await _notificationService.AddNotification(notification);
         }
 
         return _mapper.Map<AnswerDto>(answer);

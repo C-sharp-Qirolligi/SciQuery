@@ -21,13 +21,14 @@ public class NotificationHub(NotificationService notificationService) : Hub
         var userId = Context.UserIdentifier;
         await Groups.AddToGroupAsync(Context.ConnectionId, userId);
     }
-    
     public async Task MarkAsRead(int notificationId)
     {
         await _notificationService.MarkNotificationAsRead(notificationId);
-
-        // Notify clients about the change
-        await Clients.All.SendAsync("NotificationRead", notificationId);
+        var notification = await _notificationService.GetNotificationById(notificationId);
+        if (notification != null)
+        {
+            await Clients.User(notification.UserId).SendAsync("NotificationRead", notificationId);
+        }
     }
 }
 public class NotificationService(IHubContext<NotificationHub>hubcontext,SciQueryDbContext context)

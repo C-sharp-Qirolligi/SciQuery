@@ -38,7 +38,7 @@ public class QuestionService(SciQueryDbContext dbContext,
 
         if (tags == null || tags.Count == 0)
         {
-            throw new Exception();
+            return null;
         }
 
         var result = _context.Tags
@@ -71,7 +71,10 @@ public class QuestionService(SciQueryDbContext dbContext,
             .ThenInclude(qt => qt.Tag)
             .AsNoTracking();
 
-
+        if (!string.IsNullOrEmpty(queryParams.UserId))
+        {
+            query = query.Where(q => q.UserId == queryParams.UserId);
+        }
         if (!string.IsNullOrEmpty(queryParams.Search))
         {
             query = query.Where(q => q.Title.Contains(queryParams.Search)
@@ -133,18 +136,11 @@ public class QuestionService(SciQueryDbContext dbContext,
         var question = await _context.Questions
             .Where(q => q.Id == id)
             .Include(q => q.User)
-            .Include(q => q.Answers)
             .Include(q => q.QuestionTags)
             .ThenInclude(qt => qt.Tag)
             .AsNoTracking()
             .FirstOrDefaultAsync(q => q.Id == id)
             ?? throw new EntityNotFoundException($"Question does not found {id}");
-
-        question.Comments = await _context.Comments
-            .Where(c => c.Post == PostType.Question && c.PostId == id)
-            .Include(c => c.User)
-            .AsNoTracking()
-            .ToListAsync();
         
         var dto = _mapper.Map<QuestionDto>(question);
 

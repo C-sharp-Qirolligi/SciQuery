@@ -5,13 +5,17 @@ using SciQuery.Domain.Exceptions;
 using SciQuery.Infrastructure.Persistance.DbContext;
 using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.Interfaces;
+using SciQuery.Service.Mappings.Extensions;
+using SciQuery.Service.Pagination.PaginatedList;
+using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
-public class CommentService(SciQueryDbContext context, IMapper mapper) : ICommentService
+public class CommentService(SciQueryDbContext context, IMapper mapper,IFileManagingService fileMangingService) : ICommentService
 {
     private readonly SciQueryDbContext _context = context;
     private readonly IMapper _mapper = mapper;
+    private readonly IFileManagingService _fileMangingService = fileMangingService;
 
     public async Task<CommentDto> GetCommentByIdAsync(int id)
     {
@@ -28,24 +32,30 @@ public class CommentService(SciQueryDbContext context, IMapper mapper) : ICommen
         return _mapper.Map<CommentDto>(comment);
     }
 
-    public async Task<IEnumerable<CommentDto>> GetAllCommentsByQuestionIdAsync(int questionId)
+    public async Task<PaginatedList<CommentDto>> GetAllComments(CommentQueryParameters queryParameters)
     {
-        var comments = await _context.Comments
-            .Where(c => c.Post == PostType.Question && c.PostId == questionId)
-            .ToListAsync();
-        return _mapper.Map<IEnumerable<CommentDto>>(comments);
-    }
-    public Task<CommentDto> GetCommentByUserIdAsync(int id)
-    {
-        throw new NotImplementedException();
-    }
+        var query = _context.Comments
+            .AsQueryable();
+        if (queryParameters.AnswerId.HasValue && queryParameters.AnswerId > 1)
+        {
+            query = query.Where(c => c.Post == PostType.Answer && c.PostId == queryParameters.AnswerId);
+        }
+        if (queryParameters.QuestionId.HasValue && queryParameters.QuestionId > 1)
+        {
+            query = query.Where(c => c.Post == PostType.Question && c.PostId == queryParameters.QuestionId);
+        }
+        if (!string.IsNullOrWhiteSpace(queryParameters.UserId))
+        {
+            query = query.Where(c => c.UserId == queryParameters.UserId);
+        }
+        var comments = await query
+            .ToPaginatedList<CommentDto, Comment>(_mapper.ConfigurationProvider, queryParameters.PageNumber, queryParameters.PageSize);
 
-    public async Task<IEnumerable<CommentDto>> GetAllCommentsByAnswerIdAsync(int answerId)
-    {
-        var comments = await _context.Comments
-            .Where(c => c.Post == PostType.Answer && c.PostId == answerId)
-            .ToListAsync();
-        return _mapper.Map<IEnumerable<CommentDto>>(comments);
+        foreach (var comment in comments.Data)
+        {
+            comment.User.Image = await _fileMangingService.DownloadFileAsync(comment.User.ImagePath, "Users");
+        }
+        return comments;
     }
 
     public async Task<CommentDto> CreateCommentAsync(CommentForCreateDto commentCreateDto)

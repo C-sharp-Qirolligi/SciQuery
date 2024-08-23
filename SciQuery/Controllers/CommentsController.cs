@@ -6,6 +6,7 @@ using SciQuery.Domain.Exceptions;
 using SciQuery.Domain.UserModels;
 using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.Interfaces;
+using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Controllers
 {
@@ -26,18 +27,10 @@ namespace SciQuery.Controllers
             }
             return Ok(comment);
         }
-
-        [HttpGet("question/{questionId}")]
-        public async Task<IActionResult> GetAllCommentsByQuestionId(int questionId)
+        [HttpGet]
+        public async Task<IActionResult> GetAllCommentsByAnswerId(CommentQueryParameters queryParameters)
         {
-            var comments = await _commentService.GetAllCommentsByQuestionIdAsync(questionId);
-            return Ok(comments);
-        }
-
-        [HttpGet("answer/{answerId}")]
-        public async Task<IActionResult> GetAllCommentsByAnswerId(int answerId)
-        {
-            var comments = await _commentService.GetAllCommentsByAnswerIdAsync(answerId);
+            var comments = await _commentService.GetAllComments(queryParameters);
             return Ok(comments);
         }
 
