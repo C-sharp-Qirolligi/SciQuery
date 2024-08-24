@@ -28,7 +28,7 @@ namespace SciQuery.Controllers
             return Ok(comment);
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllCommentsByAnswerId(CommentQueryParameters queryParameters)
+        public async Task<IActionResult> GetAll([FromQuery]CommentQueryParameters queryParameters)
         {
             var comments = await _commentService.GetAllComments(queryParameters);
             return Ok(comments);

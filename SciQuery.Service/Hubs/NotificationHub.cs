@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
+using SciQuery.Domain.UserModels;
 using SciQuery.Infrastructure.Persistance.DbContext;
+using System.Text;
 [Authorize]
 public class NotificationHub(NotificationService notificationService) : Hub
 {
@@ -20,6 +22,11 @@ public class NotificationHub(NotificationService notificationService) : Hub
     {
         var userId = Context.UserIdentifier;
         await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+        await _notificationService.GetAllNotificationsByUserId(userId);
+    }
+    public string GetConnectionId()
+    {
+        return Context.ConnectionId;
     }
     public async Task MarkAsRead(int notificationId)
     {
@@ -35,23 +42,37 @@ public class NotificationService(IHubContext<NotificationHub>hubcontext,SciQuery
 {
     private readonly IHubContext<NotificationHub> _hubcontext = hubcontext;
     private readonly SciQueryDbContext _context = context;
-
+    public async Task GetAllNotificationsByUserId(string userId)
+    {
+        var notifications = await _context.Notifications.Where(n => n.UserId == userId).ToListAsync();
+        
+        foreach(var notification in notifications)
+        {
+            await _hubcontext.Clients.Group(userId).SendAsync("ReceiveNotification", notification);
+        }
+    }
     public async Task NotifyUser(string userId, string message)
     {
-        await _hubcontext.Clients.Group(userId).SendAsync("ReceiveNotification", message);
+        if (userId == null)
+        {
+            return;
+        }
+        Notification notification = new Notification()
+        {
+            UserId = userId,
+            IsRead = false,
+            TimeSpan = DateTime.UtcNow,
+            Message = message
+        };
+
+        await _hubcontext.Clients.Group(userId).SendAsync("ReceiveNotification", notification);
+        await AddNotification(notification);
     }
 
     public async Task AddNotification(Notification notification)
     {
         _context.Notifications.Add(notification);
         await _context.SaveChangesAsync();
-    }
-
-    public async Task<IEnumerable<Notification>> GetNotificationsForUser(string userId)
-    {
-        return await _context.Notifications
-            .Where(n => n.UserId == userId)
-            .ToListAsync();
     }
 
     public async Task MarkNotificationAsRead(int notificationId)

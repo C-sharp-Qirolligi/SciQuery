@@ -232,6 +232,7 @@ app.UseRouting();
 //and this
 app.UseCors("AllowLocalhost5173");
 
+
 app.UseAuthentication();
 
 app.UseAuthorization();

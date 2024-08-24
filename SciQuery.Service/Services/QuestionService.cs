@@ -151,10 +151,10 @@ public class QuestionService(SciQueryDbContext dbContext,
 
         foreach (var imagePath in question.ImagePaths)
         {
-            
             var image = await fileManaging.DownloadFileAsync(imagePath, "QuestionImages");
             dto.Images!.Add(image);
         }
+        dto.User.Image = await fileManaging.DownloadFileAsync(dto.User.ImagePath!, "UserImages");
 
         return dto
             ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");

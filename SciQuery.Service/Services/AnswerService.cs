@@ -37,33 +37,16 @@ public class AnswerService(SciQueryDbContext context,
         var answer = await _context.Answers
             .AsQueryable()
             .Include(a => a.User)
-            .Include(a => a.Question)
-            .Include(a => a.Comments)
             .AsNoTracking()
             .AsSplitQuery()
             .FirstOrDefaultAsync(a => a.Id == id)
             ?? throw new EntityNotFoundException($"Answer with id : {id} is not found!");
 
-        answer.Comments = await _context.Comments
-            .Where(c => c.Post == PostType.Question && c.PostId == id)
-            .AsNoTracking()
-            .ToListAsync();
-
         var dto = _mapper.Map<AnswerDto>(answer);
-
-        var images = new List<ImageFile>();
         
-        if(answer.ImagePaths is null )
-        {
-            return dto;
-        }
-
-        foreach (var imagePath in answer.ImagePaths)
-        {
-            var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
-            images.Add(image);
-        }
-        dto.Images = images;
+        dto.User.Image = await fileManaging.DownloadFileAsync(answer.User.ImagePath!,"UserImages");
+        
+        await FetchImagesForAnswersAsync(dto);
 
         return dto;
     }
@@ -80,47 +63,31 @@ public class AnswerService(SciQueryDbContext context,
 
         var answerIds = answers.Data.Select(a => a.Id).ToList();
 
-        // Fetch comments
-        var comments = await _context.Comments
-            .Include(c => c.User)
-            .Where(c => answerIds.Contains(c.PostId) && c.Post == PostType.Answer)
-            .ProjectTo<CommentDto>(_mapper.ConfigurationProvider)
-            .ToListAsync();
-
         // Fetch images in a separate method
-        await FetchImagesForAnswers(answers.Data);
-
-        // Associate comments with their respective answers
-        foreach (var answer in answers.Data)
+        foreach(var answer in answers.Data)
         {
-            answer.Comments = comments
-                .Where(c => c.PostId == answer.Id)
-                .ToList();
+            await FetchImagesForAnswersAsync(answer);
+            answer.User.Image = await fileManaging.DownloadFileAsync(answer.User.ImagePath!, "UserImages");
         }
-
+        
         return answers;
     }
 
-    private async Task FetchImagesForAnswers(IEnumerable<AnswerDto> answers)
+    private async Task FetchImagesForAnswersAsync(AnswerDto answer)
     {
-        foreach(var answer in answers)
+        if(answer is null || answer.ImagePaths is null)
         {
-
-            if (answer == null)
-            {
-                continue;
-            }
-
-            var images = new List<ImageFile>();
-            
-            foreach (var imagePath in answer.ImagePaths ?? Enumerable.Empty<string>())
-            {
-                var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
-                images.Add(image);
-            }
-
-            answer.Images = images;
+            return;
         }
+        var images = new List<ImageFile>();
+
+        foreach (var imagePath in answer.ImagePaths ?? Enumerable.Empty<string>())
+        {
+            var image = await fileManaging.DownloadFileAsync(imagePath, "AnswerImages");
+            images.Add(image);
+        }
+
+        answer.Images = images;
     }
 
     public async Task<AnswerDto> CreateAsync(AnswerForCreateDto answerCreateDto)
@@ -139,15 +106,8 @@ public class AnswerService(SciQueryDbContext context,
 
         if (question != null)
         {
-            Notification notification = new Notification()
-            {
-                UserId = question.UserId,
-                IsRead = false,
-                TimeSpan = DateTime.UtcNow,
-                Message = $"Savolingizga {answer.User.UserName} javob berildi"
-            };
-            await _notificationService.NotifyUser(notification.UserId, notification.Message);
-            await _notificationService.AddNotification(notification);
+            var message = $"{answer.User.UserName} tomonidan savolingiga javob berildi";
+            await _notificationService.NotifyUser(question.UserId, message);
         }
 
         return _mapper.Map<AnswerDto>(answer);

@@ -11,11 +11,16 @@ using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Service.Services;
 
-public class CommentService(SciQueryDbContext context, IMapper mapper,IFileManagingService fileMangingService) : ICommentService
+public class CommentService(SciQueryDbContext context,
+    IMapper mapper,
+    IFileManagingService fileMangingService,
+    NotificationService notificationService
+    ) : ICommentService
 {
     private readonly SciQueryDbContext _context = context;
     private readonly IMapper _mapper = mapper;
     private readonly IFileManagingService _fileMangingService = fileMangingService;
+    private readonly NotificationService _notificationService = notificationService;
 
     public async Task<CommentDto> GetCommentByIdAsync(int id)
     {
@@ -36,13 +41,13 @@ public class CommentService(SciQueryDbContext context, IMapper mapper,IFileManag
     {
         var query = _context.Comments
             .AsQueryable();
-        if (queryParameters.AnswerId.HasValue && queryParameters.AnswerId > 1)
+        if (queryParameters.PostType.HasValue && queryParameters.PostType == (int)PostType.Answer && queryParameters.PostId.HasValue)
         {
-            query = query.Where(c => c.Post == PostType.Answer && c.PostId == queryParameters.AnswerId);
+            query = query.Where(c => c.Post == PostType.Answer && c.PostId == queryParameters.PostId);
         }
-        if (queryParameters.QuestionId.HasValue && queryParameters.QuestionId > 1)
+        if (queryParameters.PostType.HasValue && queryParameters.PostType == (int)PostType.Question && queryParameters.PostId.HasValue)
         {
-            query = query.Where(c => c.Post == PostType.Question && c.PostId == queryParameters.QuestionId);
+            query = query.Where(c => c.Post == PostType.Question && c.PostId == queryParameters.PostId);
         }
         if (!string.IsNullOrWhiteSpace(queryParameters.UserId))
         {
@@ -53,7 +58,7 @@ public class CommentService(SciQueryDbContext context, IMapper mapper,IFileManag
 
         foreach (var comment in comments.Data)
         {
-            comment.User.Image = await _fileMangingService.DownloadFileAsync(comment.User.ImagePath, "Users");
+            comment.User.Image = await _fileMangingService.DownloadFileAsync(comment.User.ImagePath, "UserImages");
         }
         return comments;
     }
@@ -62,8 +67,30 @@ public class CommentService(SciQueryDbContext context, IMapper mapper,IFileManag
     {
         var comment = _mapper.Map<Comment>(commentCreateDto);
 
-        _context.Comments.Add(comment);
+        var createdComment = _context.Comments.Add(comment).Entity;
         await _context.SaveChangesAsync();
+
+        var user = createdComment.User;
+        if (commentCreateDto.Post == PostType.Question)
+        {
+            user = await _context.Questions
+                .Include(c => c.User)
+                .Where(c => c.Id == commentCreateDto.PostId)
+                .Select(c => c.User)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            user = await _context.Answers
+                .Include(c => c.User)
+                .Where(c => c.Id == commentCreateDto.PostId)
+                .Select(c => c.User)
+                .FirstOrDefaultAsync();
+        }
+
+        var postType = commentCreateDto.Post == PostType.Answer ? "javob" : "savol";
+        
+        await _notificationService.NotifyUser(user.Id, $"Sizning {postType}ingizga {user.UserName} tomonidan fikr yozildi");
 
         return _mapper.Map<CommentDto>(comment);
     }
