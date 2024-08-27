@@ -178,11 +178,12 @@ builder.Services.AddCors(options =>
         builder => builder
             .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod()   
+            .AllowAnyMethod()
+            .SetIsOriginAllowed(x => true)
             .AllowCredentials());
 });
 
-builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<INotificationService,NotificationService>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();

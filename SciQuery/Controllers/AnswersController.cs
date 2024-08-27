@@ -30,10 +30,10 @@ namespace SciQuery.Controllers
             return Ok(answer);
         }
 
-        [HttpGet("question/{questionId}")]
-        public async Task<IActionResult> GetAllAnswersByQuestionId(int questionId, [FromQuery] AnswerQueryParameters answerQueryParameters)
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] AnswerQueryParameters answerQueryParameters)
         {
-            var answers = await _answerService.GetAllAnswersByQuestionIdAsync(questionId, answerQueryParameters);
+            var answers = await _answerService.GetAll(answerQueryParameters);
             return Ok(answers);
         }
 

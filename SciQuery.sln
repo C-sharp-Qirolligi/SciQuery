@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SciQuery", "SciQuery\SciQuery.csproj", "{A4748A04-1C8D-4D4C-AF68-BE43E58C39EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SciQuery", "SciQuery\SciQuery.csproj", "{A4748A04-1C8D-4D4C-AF68-BE43E58C39EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SciQuery.Domain", "SciQuery.Domain\SciQuery.Domain.csproj", "{146BAB68-78B9-4089-B329-517FE74518E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SciQuery.Domain", "SciQuery.Domain\SciQuery.Domain.csproj", "{146BAB68-78B9-4089-B329-517FE74518E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SciQuery.Infrastructure", "SciQuery.Infrastructure\SciQuery.Infrastructure.csproj", "{C51B4999-DBED-4D3B-B32C-194624AA0162}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SciQuery.Infrastructure", "SciQuery.Infrastructure\SciQuery.Infrastructure.csproj", "{C51B4999-DBED-4D3B-B32C-194624AA0162}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SciQuery.Service", "SciQuery.Service\SciQuery.Service.csproj", "{E35E5542-2757-43F3-AC55-D97FFD224889}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SciQuery.Service", "SciQuery.Service\SciQuery.Service.csproj", "{E35E5542-2757-43F3-AC55-D97FFD224889}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTest.csproj", "{AB05B0E6-5C3B-4918-9DA8-91F0E5E707B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{E35E5542-2757-43F3-AC55-D97FFD224889}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E35E5542-2757-43F3-AC55-D97FFD224889}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E35E5542-2757-43F3-AC55-D97FFD224889}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB05B0E6-5C3B-4918-9DA8-91F0E5E707B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB05B0E6-5C3B-4918-9DA8-91F0E5E707B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB05B0E6-5C3B-4918-9DA8-91F0E5E707B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB05B0E6-5C3B-4918-9DA8-91F0E5E707B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

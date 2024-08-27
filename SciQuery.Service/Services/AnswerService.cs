@@ -21,7 +21,7 @@ public class AnswerService(SciQueryDbContext context,
                             IMapper mapper, 
                             IFileManagingService fileManaging,
                             ICommentService commentService,
-                            NotificationService notificationService) : IAnswerService
+                            INotificationService notificationService) : IAnswerService
 {
     private readonly SciQueryDbContext _context = context
         ??throw new ArgumentNullException(nameof(context));
@@ -30,7 +30,7 @@ public class AnswerService(SciQueryDbContext context,
     private readonly IFileManagingService _fileManaging = fileManaging
        ?? throw new ArgumentNullException(nameof(mapper));
     private readonly ICommentService _commentService = commentService;
-    private readonly NotificationService _notificationService = notificationService;
+    private readonly INotificationService _notificationService = notificationService;
 
     public async Task<AnswerDto> GetByIdAsync(int id)
     {
@@ -50,18 +50,27 @@ public class AnswerService(SciQueryDbContext context,
 
         return dto;
     }
-    public async Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, AnswerQueryParameters answerQueryParameters)
+    public async Task<PaginatedList<AnswerDto>> GetAll(AnswerQueryParameters answerQueryParameters)
     {
 
         // Fetch paginated answers
-        var answers = await _context.Answers
-            .Include(a => a.User)
-            .Where(a => a.QuestionId == questionId)
-            .OrderBy(a => a.Id)
+        var query = _context.Answers
+            .Include(a => a.User).AsQueryable();
+
+        if(answerQueryParameters.UserId != null)
+        {
+            query = query.Where(x => x.UserId == answerQueryParameters.UserId); 
+        }
+        if(answerQueryParameters.QuestionId != null)
+        {
+            query = query.Where(x => x.QuestionId == answerQueryParameters.QuestionId);
+        }
+
+        var answers = await query
+            .OrderByDescending(a => a.CreatedDate)
+            .ThenByDescending(x => x.UpdatedDate)
             .AsNoTracking()
             .ToPaginatedList<AnswerDto, Answer>(_mapper.ConfigurationProvider, answerQueryParameters.PageNumber, answerQueryParameters.PageSize);
-
-        var answerIds = answers.Data.Select(a => a.Id).ToList();
 
         // Fetch images in a separate method
         foreach(var answer in answers.Data)
@@ -96,7 +105,7 @@ public class AnswerService(SciQueryDbContext context,
         answer.CreatedDate = DateTime.Now;
         answer.UpdatedDate = DateTime.Now;
 
-        _context.Answers.Add(answer);
+        var createdAnswer = _context.Answers.Add(answer).Entity;
         await _context.SaveChangesAsync();
 
         // Savolni yaratgan foydalanuvchiga bildirishnoma yuborish
@@ -104,12 +113,19 @@ public class AnswerService(SciQueryDbContext context,
             .Include(q => q.User)
             .FirstOrDefaultAsync(q => q.Id == answer.QuestionId);
 
-        if (question != null)
-        {
-            var message = $"{answer.User.UserName} tomonidan savolingiga javob berildi";
-            await _notificationService.NotifyUser(question.UserId, message);
-        }
 
+        var notification = new Notification()
+        {
+            QuestionId = question.Id,
+            Message = $"{answer.User.UserName} tomonidan savolingiga javob berildi",
+            TimeSpan = DateTime.Now,
+            IsRead = false,
+            UserId = question.UserId,
+        };
+
+        await _notificationService.NotifyUser(notification);
+        await _notificationService.AddNotification(notification);
+            
         return _mapper.Map<AnswerDto>(answer);
     }
 

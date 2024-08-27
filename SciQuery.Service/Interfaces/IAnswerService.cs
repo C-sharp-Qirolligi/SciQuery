@@ -8,7 +8,7 @@ namespace SciQuery.Service.Interfaces;
 
 public interface IAnswerService
 {
-    Task<PaginatedList<AnswerDto>> GetAllAnswersByQuestionIdAsync(int questionId, AnswerQueryParameters answerQueryParameters);
+    Task<PaginatedList<AnswerDto>> GetAll(AnswerQueryParameters answerQueryParameters);
     Task<AnswerDto> GetByIdAsync(int id);
     Task<AnswerDto> CreateAsync(AnswerForCreateDto answer);
     Task<string> CreateImages(IFormFile file);

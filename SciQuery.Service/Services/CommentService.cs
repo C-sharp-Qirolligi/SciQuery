@@ -14,13 +14,13 @@ namespace SciQuery.Service.Services;
 public class CommentService(SciQueryDbContext context,
     IMapper mapper,
     IFileManagingService fileMangingService,
-    NotificationService notificationService
+    INotificationService notificationService
     ) : ICommentService
 {
     private readonly SciQueryDbContext _context = context;
     private readonly IMapper _mapper = mapper;
     private readonly IFileManagingService _fileMangingService = fileMangingService;
-    private readonly NotificationService _notificationService = notificationService;
+    private readonly INotificationService _notificationService = notificationService;
 
     public async Task<CommentDto> GetCommentByIdAsync(int id)
     {
@@ -71,6 +71,8 @@ public class CommentService(SciQueryDbContext context,
         await _context.SaveChangesAsync();
 
         var user = createdComment.User;
+        var questionId = comment.PostId;
+
         if (commentCreateDto.Post == PostType.Question)
         {
             user = await _context.Questions
@@ -86,11 +88,25 @@ public class CommentService(SciQueryDbContext context,
                 .Where(c => c.Id == commentCreateDto.PostId)
                 .Select(c => c.User)
                 .FirstOrDefaultAsync();
+
+            questionId = await _context.Answers
+                .Where(c => c.Id == commentCreateDto.PostId)
+                .Select(c => c.QuestionId)
+                .FirstOrDefaultAsync();
         }
 
         var postType = commentCreateDto.Post == PostType.Answer ? "javob" : "savol";
-        
-        await _notificationService.NotifyUser(user.Id, $"Sizning {postType}ingizga {user.UserName} tomonidan fikr yozildi");
+
+        var notification = new Notification()
+        {
+            QuestionId = questionId,
+            Message =  $"Sizning {postType}ingizga {user.UserName} tomonidan fikr yozildi",
+            TimeSpan = DateTime.Now,
+            UserId = user.Id,
+            IsRead = false,
+        };
+
+        await _notificationService.NotifyUser(notification);
 
         return _mapper.Map<CommentDto>(comment);
     }
