@@ -6,17 +6,19 @@ namespace SciQuery.Domain.UserModels;
 
 public class User : IdentityUser
 {
-    public string? ImagePath { get; set; }
     public int Reputation {  get; set; }
+    public string? ImagePath { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime LastLogindate {  get; set; }
     public virtual ICollection<Answer> Answers{ get; set; }
-    public virtual ICollection<Question> Questions{ get; set; }
     public virtual ICollection<Comment> Comments{ get; set; }
+    public virtual ICollection<Question> Questions{ get; set; }
+    public virtual ICollection<Notification> Notifications { get; set; }
     public User()
     {
         Answers = new List<Answer>();
-        Questions = new List<Question>();
         Comments = new List<Comment>();
+        Questions = new List<Question>();
+        Notifications = new List<Notification>();
     }
 }

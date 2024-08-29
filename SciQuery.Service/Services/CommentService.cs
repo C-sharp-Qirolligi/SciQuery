@@ -100,13 +100,14 @@ public class CommentService(SciQueryDbContext context,
         var notification = new Notification()
         {
             QuestionId = questionId,
-            Message =  $"Sizning {postType}ingizga {user.UserName} tomonidan fikr yozildi",
+            Message =  $"🗨️ Sizning {postType}ingizga {user.UserName} tomonidan fikr yozildi",
             TimeSpan = DateTime.Now,
             UserId = user.Id,
             IsRead = false,
         };
 
         await _notificationService.NotifyUser(notification);
+        await _notificationService.AddNotification(notification);
 
         return _mapper.Map<CommentDto>(comment);
     }

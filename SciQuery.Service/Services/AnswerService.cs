@@ -117,7 +117,7 @@ public class AnswerService(SciQueryDbContext context,
         var notification = new Notification()
         {
             QuestionId = question.Id,
-            Message = $"{answer.User.UserName} tomonidan savolingiga javob berildi",
+            Message = $"💡 {answer.User.UserName} tomonidan savolingiga javob berildi",
             TimeSpan = DateTime.Now,
             IsRead = false,
             UserId = question.UserId,

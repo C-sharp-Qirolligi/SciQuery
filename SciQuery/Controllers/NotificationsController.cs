@@ -1,21 +1,40 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SciQuery.Domain.Entities;
-using SciQuery.Infrastructure.Persistance.DbContext;
+using SciQuery.Domain.UserModels;
 using SciQuery.Service.Interfaces;
+using SciQuery.Service.QueryParams;
 
 namespace SciQuery.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class NotificationController(INotificationService notificationService,SciQueryDbContext context) : ControllerBase
+    public class NotificationController(
+        INotificationService notificationService,
+        UserManager<User> userManager
+        ) : ControllerBase
     {
         private readonly INotificationService _notificationService = notificationService;
-        private readonly SciQueryDbContext _context = context;
+        private readonly UserManager<User> _userManager = userManager;
 
-        [HttpPost("send-notification")]
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetAllByUserId([FromQuery] NotificationQueryParameters queryParameters)
+        {
+            var userId = _userManager.GetUserId(User); 
+            
+            if(userId is null)
+            {
+                NotFound();
+            }
+
+            var notifications =  await _notificationService.GetNotificationsByUserId(userId,queryParameters);
+            return Ok(notifications);
+        }
+        
+        [HttpPost]
         public async Task<IActionResult> SendNotification([FromBody] Notification notification)
         {
             await _notificationService.NotifyUser(notification);

@@ -33,32 +33,16 @@ public class QuestionService(SciQueryDbContext dbContext,
     {
         var tags = await _context.Questions
                 .Where(x => x.Id == id)
-                .SelectMany(x => x.QuestionTags.Select(qt => qt.Tag))
+                .SelectMany(x => x.QuestionTags.Select(qt => qt.Tag.Name))
                 .ToListAsync() ?? throw new EntityNotFoundException();
 
-        if (tags == null || tags.Count == 0)
-        {
-            return null;
-        }
-
-        var result = _context.Tags
-            .Where(x => tags.Contains(x))
-            .Join(_context.QuestionTags,
-                t => t.Id,
-                qt => qt.TagId,
-                (t, qt) => new { qt.QuestionId })
-            .GroupBy(q => q.QuestionId)
-            .OrderByDescending(g => g.Count())
-            .Select(g => new { QuestionId = g.Key, Count = g.Count() });
-
-        var questions = await result
-            .Join(_context.Questions,
-                  r => r.QuestionId,
-                  q => q.Id,
-                  (r, q) => q)
+        var query = _context.Questions
             .AsNoTracking()
-            .ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider);
+            .AsQueryable();
+        
+        query = GetQuestionsByTags(tags, query);
 
+        var questions = await query.ToPaginatedList<ForEasyQestionDto, Question>(_mapper.ConfigurationProvider);
         return questions;
     }
     public async Task<PaginatedList<ForEasyQestionDto>> GetAllAsync(QuestionQueryParameters queryParams)
@@ -89,6 +73,11 @@ public class QuestionService(SciQueryDbContext dbContext,
         if (queryParams.NoAcceptedAnswer.HasValue && queryParams.NoAcceptedAnswer == true)
         {
             query = query.Where(q => q.AcceptedAnswers == null || q.AcceptedAnswers.Count==0);
+        }
+        
+        if(queryParams.Tags != null && queryParams.Tags.Count > 0 && queryParams.Tags.All(tag => !string.IsNullOrEmpty(tag)))
+        {
+            query = GetQuestionsByTags(queryParams.Tags,query);
         }
 
         if (!string.IsNullOrWhiteSpace(queryParams.SortBy) && queryParams.SortBy == QuerySortingParametersConstants.MostVoted)
@@ -238,6 +227,32 @@ public class QuestionService(SciQueryDbContext dbContext,
         await _context.SaveChangesAsync();
 
         return true;
+    }
+    private IQueryable<Question> GetQuestionsByTags(ICollection<string>tags,IQueryable<Question>query)
+    {
+        if (tags == null || tags.Count == 0)
+        {
+            return query;
+        }
+
+        var result = _context.Tags
+            .Where(x => tags.Contains(x.Name))
+            .Join(_context.QuestionTags,
+                t => t.Id,
+                qt => qt.TagId,
+                (t, qt) => new { qt.QuestionId })
+            .GroupBy(q => q.QuestionId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => new { QuestionId = g.Key, Count = g.Count() });
+
+        var questions = result
+            .Join(_context.Questions,
+                  r => r.QuestionId,
+                  q => q.Id,
+                  (r, q) => q)
+            .AsNoTracking();
+        
+        return questions;
     }
 }
 

@@ -18,7 +18,7 @@ public class NotificationHub(INotificationService notificationService) : Hub
     {
         var userId = Context.UserIdentifier;
         await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-        await _notificationService.GetAllNotificationsByUserId(userId);
+        await _notificationService.GetUnreadNotificationsByUserId(userId);
     }
     public string GetConnectionId()
     {

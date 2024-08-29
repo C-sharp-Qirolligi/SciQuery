@@ -1,4 +1,6 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.IdentityModel.Tokens;
@@ -30,10 +32,8 @@ builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
 
 //Add Services
-builder.Services.AddScoped<IFileManagingService, FileMangingService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITagService, TagService>();
@@ -41,9 +41,15 @@ builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IAnswerService, AnswerService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IVoteService, VoteService>();    
-builder.Services.AddScoped<IReputationService, ReputationService>();    
+builder.Services.AddScoped<IReputationService, ReputationService>();
+builder.Services.AddScoped<INotificationService,NotificationService>();
 
-builder.Services.AddAutoMapper(typeof(UserMappings).Assembly);
+//SingleTon Servics
+builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
+builder.Services.AddSingleton<IFileManagingService, FileMangingService>();
+
+//Add automapper
+builder.Services.AddAutoMapper(typeof(NotificationMappings).Assembly); 
 
 //Identity Usermanager and rolemanager
 builder.Services.AddDbContext<SciQueryDbContext>();
@@ -183,7 +189,6 @@ builder.Services.AddCors(options =>
             .AllowCredentials());
 });
 
-builder.Services.AddScoped<INotificationService,NotificationService>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
