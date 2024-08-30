@@ -10,6 +10,7 @@ using SciQuery.Service.Mappings.Extensions;
 using SciQuery.Service.Pagination.PaginatedList;
 using SciQuery.Service.QueryParams;
 using System.Reflection.Metadata.Ecma335;
+using System.Xml;
 
 namespace SciQuery.Service.Services;
 
@@ -107,17 +108,13 @@ public class QuestionService(SciQueryDbContext dbContext,
             })
             .ToListAsync();
 
+        //Bu yerini to'girlash kerak . Commentlar lazy loading asosida yuklansin yoki umuman yuklanmasin
         foreach (var question in result.Data)
         {
             var comment = comments.FirstOrDefault(c => c.PostId == question.Id);
             question.CommentsCount = comment != null ? comment.Count : 0;
             question.User.Image = await fileManaging.DownloadFileAsync(question.User.ImagePath, "UserImages");
-            if(question.User.UserName == "Sanjar1")
-            {
-                int a = 0;
-            }
         }
-
         return result;
     }
     public async Task<QuestionDto> GetByIdAsync(int id)
@@ -152,14 +149,76 @@ public class QuestionService(SciQueryDbContext dbContext,
         var question = _mapper.Map<Question>(questionCreateDto);
         question.CreatedDate = DateTime.Now;
         question.UpdatedDate = DateTime.Now;
-
+        
         // Question ob'ektini saqlash
         _context.Questions.Add(question);
         await _context.SaveChangesAsync();
 
         // Teglar va ularning bog'lanishlarini qo'shish
+        await CreateAndConnectTags(question, questionCreateDto.Tags);
+
+        await _context.SaveChangesAsync();
+
+        // Yangi yaratilgan QuestionDto qaytarish
+        return _mapper.Map<QuestionDto>(question);
+    }
+
+    public async Task<string> CreateImages(IFormFile file)
+    {
+        return await _fileManaging.UploadFile(file, "Source", "Images", "QuestionImages");
+    }
+
+    public async Task UpdateAsync(int id, QuestionForUpdateDto questionUpdateDto)
+    {
+        var question = await _context.Questions
+            .Include(q => q.QuestionTags)
+            .ThenInclude(a => a.Tag)
+            .FirstOrDefaultAsync(x => x.Id == id)
+            ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");
+        
+        question.UpdatedDate = DateTime.Now;
+
+        //If question have a any question tags ,remove they. In end of method clear tags which have not any question tags!
+        _context.QuestionTags.RemoveRange(question.QuestionTags.Where(x => !questionUpdateDto.Tags.Contains(x.Tag.Name)));
+        _context.SaveChanges();
+
+        //kelgan questionni yangi teglarga bog'lash yoki yangi teglar yaratish
+        var oldTags = question.QuestionTags.Select(qt => qt.Tag.Name).ToList();
+        var newTags = questionUpdateDto.Tags.Where(c => !oldTags.Contains(c)).ToList();
+
+        await CreateAndConnectTags(question, newTags);
+
+        _mapper.Map(questionUpdateDto, question);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var question = await _context.Questions.FirstOrDefaultAsync(q => q.Id == id);
+
+        if (question == null)
+        {
+            return false;
+        }
+
+        await _commentService.DeleteCommentByPostIdAsync(PostType.Question, question.Id);   
+
+        _context.Questions.Remove(question);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+    //Taglarni yaratish va savolga bo'g'lash mantig'ini chiqarib olish
+    private async Task CreateAndConnectTags(Question question,List<string>newTags)
+    {
+        //change all incoming tags toLower case
+        newTags = newTags.Select(x => x.ToLower()).ToList();
+
+        //to track and create new tags
         var tags = new List<Tag>();
-        foreach (var tagName in questionCreateDto.Tags)
+
+        //If tag is exist connect to question it by createing questionTags. If Does not exist create tag
+        foreach (var tagName in newTags)
         {
             var tag = await _context.Tags.SingleOrDefaultAsync(t => t.Name == tagName);
 
@@ -189,44 +248,16 @@ public class QuestionService(SciQueryDbContext dbContext,
         }).ToList();
 
         _context.QuestionTags.AddRange(questionTags);
+
         await _context.SaveChangesAsync();
 
-        // Yangi yaratilgan QuestionDto qaytarish
-        return _mapper.Map<QuestionDto>(question);
+        //Bo'sh bo'lib qogan teglarni tozalash
+        await ClearEmptyTags();
     }
-
-    public async Task<string> CreateImages(IFormFile file)
+    private async Task ClearEmptyTags()
     {
-        return await _fileManaging.UploadFile(file, "Source", "Images", "QuestionImages");
-    }
-
-    public async Task UpdateAsync(int id, QuestionForUpdateDto questionUpdateDto)
-    {
-        var question = await _context.Questions.FindAsync(id) 
-            ?? throw new EntityNotFoundException($"Question with id : {id} is not found!");
-        
-        question.UpdatedDate = DateTime.Now;
-
-        _mapper.Map(questionUpdateDto, question);
-        
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task<bool> DeleteAsync(int id)
-    {
-        var question = await _context.Questions.FirstOrDefaultAsync(q => q.Id == id);
-
-        if (question == null)
-        {
-            return false;
-        }
-
-        await _commentService.DeleteCommentByPostIdAsync(PostType.Question, question.Id);   
-
-        _context.Questions.Remove(question);
-        await _context.SaveChangesAsync();
-
-        return true;
+        var tags = await _context.Tags.Where(t => t.QuestionTags.Count == 0).ToListAsync();
+        _context.RemoveRange(tags);
     }
     private IQueryable<Question> GetQuestionsByTags(ICollection<string>tags,IQueryable<Question>query)
     {

@@ -13,8 +13,8 @@ namespace SciQuery.Service.DTOs.Question
         public string Title { get; set; }
         public string Body { get; set; }
         public string? UserId { get; set; }
-        public ICollection<string>? ImagePaths { get; set; }
-        public ICollection<string> Tags { get; set; }
+        public List<string>? ImagePaths { get; set; }
+        public List<string> Tags { get; set; }
     }
 
 }
