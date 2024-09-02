@@ -12,8 +12,8 @@ using SciQuery.Infrastructure.Persistance.DbContext;
 namespace SciQuery.Infrastructure.Migrations
 {
     [DbContext(typeof(SciQueryDbContext))]
-    [Migration("20240801145616_Intial_Create")]
-    partial class Intial_Create
+    [Migration("20240816122027_changeNameImagePathtoImagePaths")]
+    partial class changeNameImagePathtoImagePaths
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -172,7 +172,7 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ImagePath")
+                    b.Property<string>("ImagePaths")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("QuestionId")
@@ -184,6 +184,9 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Votes")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -212,6 +215,12 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Post")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("QuestionId")
                         .HasColumnType("int");
 
@@ -227,7 +236,7 @@ namespace SciQuery.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comment", (string)null);
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Question", b =>
@@ -244,7 +253,7 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ImagePath")
+                    b.Property<string>("ImagePaths")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -256,6 +265,9 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Votes")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -331,38 +343,6 @@ namespace SciQuery.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tag", (string)null);
-                });
-
-            modelBuilder.Entity("SciQuery.Domain.Entities.Vote", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AnswerId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("VoteType")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AnswerId");
-
-                    b.HasIndex("QuestionId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Vote", (string)null);
                 });
 
             modelBuilder.Entity("SciQuery.Domain.UserModels.User", b =>
@@ -502,7 +482,7 @@ namespace SciQuery.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("SciQuery.Domain.UserModels.User", "User")
-                        .WithMany()
+                        .WithMany("Answers")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -514,23 +494,19 @@ namespace SciQuery.Infrastructure.Migrations
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Comment", b =>
                 {
-                    b.HasOne("SciQuery.Domain.Entities.Answer", "Answer")
+                    b.HasOne("SciQuery.Domain.Entities.Answer", null)
                         .WithMany("Comments")
                         .HasForeignKey("AnswerId");
 
-                    b.HasOne("SciQuery.Domain.Entities.Question", "Question")
+                    b.HasOne("SciQuery.Domain.Entities.Question", null)
                         .WithMany("Comments")
                         .HasForeignKey("QuestionId");
 
                     b.HasOne("SciQuery.Domain.UserModels.User", "User")
-                        .WithMany()
+                        .WithMany("Comments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Answer");
-
-                    b.Navigation("Question");
 
                     b.Navigation("User");
                 });
@@ -538,7 +514,7 @@ namespace SciQuery.Infrastructure.Migrations
             modelBuilder.Entity("SciQuery.Domain.Entities.Question", b =>
                 {
                     b.HasOne("SciQuery.Domain.UserModels.User", "User")
-                        .WithMany()
+                        .WithMany("Questions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -576,34 +552,9 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SciQuery.Domain.Entities.Vote", b =>
-                {
-                    b.HasOne("SciQuery.Domain.Entities.Answer", "Answer")
-                        .WithMany("Votes")
-                        .HasForeignKey("AnswerId");
-
-                    b.HasOne("SciQuery.Domain.Entities.Question", "Question")
-                        .WithMany("Votes")
-                        .HasForeignKey("QuestionId");
-
-                    b.HasOne("SciQuery.Domain.UserModels.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Answer");
-
-                    b.Navigation("Question");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SciQuery.Domain.Entities.Answer", b =>
                 {
                     b.Navigation("Comments");
-
-                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Question", b =>
@@ -613,13 +564,20 @@ namespace SciQuery.Infrastructure.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("QuestionTags");
-
-                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("SciQuery.Domain.Entities.Tag", b =>
                 {
                     b.Navigation("QuestionTags");
+                });
+
+            modelBuilder.Entity("SciQuery.Domain.UserModels.User", b =>
+                {
+                    b.Navigation("Answers");
+
+                    b.Navigation("Comments");
+
+                    b.Navigation("Questions");
                 });
 #pragma warning restore 612, 618
         }

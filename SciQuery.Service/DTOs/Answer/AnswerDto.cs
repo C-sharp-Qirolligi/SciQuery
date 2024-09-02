@@ -1,11 +1,5 @@
 ﻿using SciQuery.Service.DTOs.Comment;
 using SciQuery.Service.DTOs.User;
-using SciQuery.Service.DTOs.Vote;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SciQuery.Service.DTOs.Answer
 {
@@ -15,11 +9,19 @@ namespace SciQuery.Service.DTOs.Answer
         public string? Body { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime UpdatedDate { get; set; }
+        public List<string>? ImagePaths { get; set; }
         public int QuestionId { get; set; }
         public string UserId { get; set; }
         public UserDto User { get; set; }
 
-        public ICollection<VoteDto> Votes { get; set; }
+        public int Votes { get; set; } = 0;
         public ICollection<CommentDto> Comments { get; set; }
+        public ICollection<ImageFile> Images { get; set; }
+        public AnswerDto()
+        {
+            Images = new List<ImageFile>();
+            Comments = new List<CommentDto>();
+            Images = new List<ImageFile>();
+        }
     }
 }

@@ -1,19 +1,9 @@
-﻿using SciQuery.Service.DTOs.Vote;
-using SciQuery.Service.Pagination.PaginatedList;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SciQuery.Domain.Entities;
 
-namespace SciQuery.Service.Interfaces
+namespace SciQuery.Service.Interfaces;
+
+public interface IVoteService
 {
-    public interface IVoteService
-    {
-        Task<PaginatedList<VoteDto>> GetVoteByUserIdAsync(string userId);
-        Task<PaginatedList<VoteDto>> GetAllVotesByQuestionIdAsync(int questionId);
-        Task<PaginatedList<VoteDto>> GetAllVotesByAnswerIdAsync(int answerId);
-        Task<VoteDto> CreateVoteAsync(VoteForCreateDto voteCreateDto);
-        Task<bool> DeleteVoteAsync(int id);
-    }
+    Task<(bool, string)> UpVote(string userId,int postId,PostType postType);
+    Task<(bool, string)> DownVote(string userId,int postId,PostType postType);
 }

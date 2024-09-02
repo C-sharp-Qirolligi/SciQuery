@@ -23,9 +23,9 @@ namespace SciQuery.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers(int pageNumber, int pageSize)
         {
-            var users = await _userService.GetAllAsync();
+            var users = await _userService.GetAllAsync(pageNumber, pageSize);
             return Ok(users);
         }
 
@@ -45,7 +45,14 @@ namespace SciQuery.Controllers
 
             return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
         }
-
+        
+        [HttpPost("upload-image")]
+        public async Task<ActionResult> UploadFile(IFormFile file)
+        {
+            var result = await _userService.CreateImage(file);
+            return Ok(result);
+        }
+        
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UserForUpdatesDto userUpdateDto)
         {
@@ -56,36 +63,19 @@ namespace SciQuery.Controllers
 
             await _userService.UpdateAsync(id, userUpdateDto);
 
-            return Ok();
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {
-            //var result = await _userService.DeleteAsync(id);
-            //if (!result)
-            //{
-            //    return NotFound();
-            //}
+            var result = await _userService.DeleteAsync(id);
 
-            //return NoContent();
-            try
+            if (!result)
             {
-                var result = await _userService.DeleteAsync(id);
-
-                if (!result)
-                {
-                    return NotFound(); // Foydalanuvchi topilmadi
-                }
-
-                return NoContent(); // O'chirish muvaffaqiyatli
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                // Xatolikni loglash
-                // _logger.LogError(ex, "An error occurred while deleting the user.");
-                return StatusCode(500, "Internal server error");
-            }
+            return NoContent();
         }
     }
 }

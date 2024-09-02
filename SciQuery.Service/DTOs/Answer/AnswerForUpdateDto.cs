@@ -2,6 +2,8 @@
 
 public class AnswerForUpdateDto
 {
-    public int Id { get; set; }
     public string Body { get; set; }
+    public int QuestionId { get; set; }
+    public string UserId { get; set; }
+    public List<string>? ImagePaths { get; set; }
 }

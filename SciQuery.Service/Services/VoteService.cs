@@ -1,71 +1,118 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SciQuery.Domain.Entities;
 using SciQuery.Domain.Exceptions;
 using SciQuery.Domain.UserModels;
 using SciQuery.Infrastructure.Persistance.DbContext;
-using SciQuery.Service.DTOs.Vote;
 using SciQuery.Service.Interfaces;
-using SciQuery.Service.Mappings.Extensions;
-using SciQuery.Service.Pagination.PaginatedList;
 
 namespace SciQuery.Service.Services;
 
-public class VoteService(SciQueryDbContext context, IMapper mapper) : IVoteService
+public class VoteService(SciQueryDbContext dbContext,IReputationService reputationService) : IVoteService
 {
-    private readonly SciQueryDbContext _context = context;
-    private readonly IMapper _mapper = mapper;
+    private readonly SciQueryDbContext _dbContext = dbContext;
+    private readonly IReputationService _reputationService = reputationService;
 
-
-    public async Task<PaginatedList<VoteDto>> GetAllVotesByQuestionIdAsync(int questionId)
+    public async Task<(bool,string)> DownVote(string userId, int postId, PostType postType)
     {
-        var votes = await _context.Votes
-            .Include(x => x.User)
-            .Where(v => v.QuestionId == questionId)
-            .AsNoTracking()
-            .AsSplitQuery() 
-            .ToPaginatedList<VoteDto, Vote>(_mapper.ConfigurationProvider);
-        return votes;
-    }
-    public async Task<PaginatedList<VoteDto>> GetVoteByUserIdAsync(string userId)
-    {
-        var votes = await _context.Votes
-            .Include(x => x.User)
-            .Where(u => u.UserId == userId)
-            .AsNoTracking()
-            .AsSplitQuery()
-            .ToPaginatedList<VoteDto, Vote>(_mapper.ConfigurationProvider);
+        bool check = false;
 
-        return votes;
-    }
+        if(postType is PostType.Answer)
+        {
+            check = await CheckUserHasVotedAnswer(userId, postId);
+        }
+        else if(postType is PostType.Question)
+        {
+            check = await CheckUserHasVotedQuestion(userId, postId);
+        }
 
-    public async Task<PaginatedList<VoteDto>> GetAllVotesByAnswerIdAsync(int answerId)
-    {
-        var votes = await _context.Votes
-            .Where(v => v.AnswerId == answerId)
-            .AsNoTracking()
-            .AsSplitQuery()
-            .ToPaginatedList<VoteDto, Vote>(_mapper.ConfigurationProvider);
-        return votes;
-    }
+        if (check)
+        {
+            return (false, "You voted already!");
+        }
 
-    public async Task<VoteDto> CreateVoteAsync(VoteForCreateDto voteCreateDto)
-    {
-        var vote = _mapper.Map<Vote>(voteCreateDto);
+        if (postType is PostType.Question)
+        {
+            await VoteQuestion(userId,postId, -1);
+            await _reputationService.DownVotedQuestionReputation(userId);
+        }
+        else if (postType is PostType.Answer)
+        {
+            await VoteAnswer(userId,postId, -1);
+            await _reputationService.DownVotedAnswerReputation(userId);
+        }
+        await _dbContext.SaveChangesAsync();
 
-        _context.Votes.Add(vote);
-        await _context.SaveChangesAsync();
-
-        return _mapper.Map<VoteDto>(vote);
+        return (true, "Corrextly!");
     }
 
-    public async Task<bool> DeleteVoteAsync(int id)
+    public async Task<(bool,string)> UpVote(string userId, int postId,PostType postType)
     {
-        var vote = await _context.Votes.FindAsync(id)
-            ?? throw new EntityNotFoundException($"Vote with id : {id} is not found!");
+        bool check = false;
+        if (postType is PostType.Answer)
+        {
+            check = await CheckUserHasVotedAnswer(userId, postId);
+        }
+        else if (postType is PostType.Question)
+        {
+            check = await CheckUserHasVotedQuestion(userId, postId);
+        }
 
-        _context.Votes.Remove(vote);
-        await _context.SaveChangesAsync();
-        return true;
+        if (check)
+        {
+            return (false, "You voted already!");
+        }
+
+        if (postType is PostType.Question)
+        {
+            await VoteQuestion(userId,postId, 1);
+            await _reputationService.UpVotedQuestionReputation(userId);
+        }
+        else if (postType is PostType.Answer)
+        {
+            await VoteAnswer(userId,postId, 1);
+            await _reputationService.UpVotedAnswerReputation(userId);
+        }
+        await _dbContext.SaveChangesAsync();
+
+        return (true, "Correctly!");
+    }
+    private async Task VoteQuestion(string userId,int postId,int point)
+    {
+        var post = await _dbContext.Questions.FirstOrDefaultAsync(c => c.Id == postId)
+                ?? throw new EntityNotFoundException();
+        post.Votes += point;
+
+        post.VotedUsersIds ??= new();
+
+        post.VotedUsersIds.Add(userId);
+
+        _dbContext.Update(post);
+
+    }
+    private async Task VoteAnswer(string userId, int postId, int point)
+    {
+        var post = await _dbContext.Answers.FirstOrDefaultAsync(c => c.Id == postId)
+               ?? throw new EntityNotFoundException();
+        post.Votes += point;
+
+        post.VotedUsersIds ??= new();
+        
+        post.VotedUsersIds.Add(userId);
+
+        _dbContext.Update(post);
+    }
+    private async Task<bool> CheckUserHasVotedAnswer(string userId,int postId)
+    {
+        var post = await _dbContext.Answers.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
+            ?? throw new EntityNotFoundException();
+
+        return post.VotedUsersIds != null && post.VotedUsersIds.Any(id => id == userId);
+    }
+    private async Task<bool> CheckUserHasVotedQuestion(string userId, int postId)
+    {
+        var post = await _dbContext.Questions.AsNoTracking().FirstOrDefaultAsync(x => x.Id ==  postId)
+            ?? throw new EntityNotFoundException();
+
+        return post.VotedUsersIds != null && post.VotedUsersIds.Any(id => id == userId);
     }
 }

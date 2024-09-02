@@ -98,7 +98,7 @@ public class AccountService(UserManager<User> userManager,IConfiguration configu
         var tokenDescriptor = new SecurityTokenDescriptor()
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddDays(1),
+            Expires = DateTime.UtcNow.AddMonths(10).ToUniversalTime(),
             Issuer = issuer,
             Audience = audience,
             SigningCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256Signature)

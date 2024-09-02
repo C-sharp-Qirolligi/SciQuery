@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SciQuery.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Intial_Create : Migration
+    public partial class _1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -276,33 +276,35 @@ namespace SciQuery.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Comment",
+                name: "Comments",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    QuestionId = table.Column<int>(type: "int", nullable: true),
-                    AnswerId = table.Column<int>(type: "int", nullable: true),
+                    PostId = table.Column<int>(type: "int", nullable: false),
+                    Post = table.Column<int>(type: "int", nullable: false),
                     Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    AnswerId = table.Column<int>(type: "int", nullable: true),
+                    QuestionId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Comment", x => x.Id);
+                    table.PrimaryKey("PK_Comments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Comment_Answer_AnswerId",
+                        name: "FK_Comments_Answer_AnswerId",
                         column: x => x.AnswerId,
                         principalTable: "Answer",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Comment_AspNetUsers_UserId",
+                        name: "FK_Comments_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Comment_Question_QuestionId",
+                        name: "FK_Comments_Question_QuestionId",
                         column: x => x.QuestionId,
                         principalTable: "Question",
                         principalColumn: "Id");
@@ -315,9 +317,11 @@ namespace SciQuery.Infrastructure.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    QuestionId = table.Column<int>(type: "int", nullable: true),
+                    PostId = table.Column<int>(type: "int", nullable: false),
+                    Post = table.Column<int>(type: "int", nullable: false),
+                    VoteType = table.Column<int>(type: "int", nullable: false),
                     AnswerId = table.Column<int>(type: "int", nullable: true),
-                    VoteType = table.Column<int>(type: "int", nullable: false)
+                    QuestionId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -390,18 +394,18 @@ namespace SciQuery.Infrastructure.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comment_AnswerId",
-                table: "Comment",
+                name: "IX_Comments_AnswerId",
+                table: "Comments",
                 column: "AnswerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comment_QuestionId",
-                table: "Comment",
+                name: "IX_Comments_QuestionId",
+                table: "Comments",
                 column: "QuestionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comment_UserId",
-                table: "Comment",
+                name: "IX_Comments_UserId",
+                table: "Comments",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -459,7 +463,7 @@ namespace SciQuery.Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Comment");
+                name: "Comments");
 
             migrationBuilder.DropTable(
                 name: "QuestionTag");

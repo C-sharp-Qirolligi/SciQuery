@@ -1,63 +1,54 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using SciQuery.Domain.Entities;
+using SciQuery.Domain.Exceptions;
+using SciQuery.Domain.UserModels;
 using SciQuery.Service.DTOs.Vote;
 using SciQuery.Service.Interfaces;
 
-namespace SciQuery.Controllers
+namespace SciQuery.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class VotesController(IVoteService voteService,UserManager<User> userManager) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class VotesController(IVoteService voteService) : ControllerBase
+    private readonly IVoteService _voteService = voteService;
+    private readonly UserManager<User> _userManager = userManager;
+
+    [HttpPost("upvote")]
+    [Authorize]
+    public async Task<IActionResult> UpVote([FromBody] VoteRequest vote)
     {
-        private readonly IVoteService _voteService = voteService;
+        var user = await _userManager.GetUserAsync(User)
+              ?? throw new EntityNotFoundException("User does not found!");
 
-        [HttpGet("user/{id}")]
-        public async Task<IActionResult> GetVoteByUserId(string id)
+        var result = await _voteService.UpVote(user.Id, vote.PostId, (PostType)vote.PostType);
+       
+        if (!result.Item1)
         {
-            var vote = await _voteService.GetVoteByUserIdAsync(id);
-            if (vote == null)
-            {
-                return NotFound();
-            }
-            return Ok(vote);
+            return BadRequest(result.Item2);
+        }
+        
+        return Ok(result.Item2);
+    }
+    [HttpPost("downvote")]
+    [Authorize]
+    public async Task<IActionResult> DownVote([FromBody] VoteRequest vote)
+    {
+        var user = await _userManager.GetUserAsync(User)
+              ?? throw new EntityNotFoundException("User does not found!");
+
+        var result = await _voteService.DownVote(user.Id, vote.PostId, (PostType)vote.PostType);
+
+
+        if (!result.Item1)
+        {
+            return BadRequest(result.Item2);
         }
 
-        [HttpGet("question/{questionId}")]
-        public async Task<IActionResult> GetAllVotesByQuestionId(int questionId)
-        {
-            var votes = await _voteService.GetAllVotesByQuestionIdAsync(questionId);
-            return Ok(votes);
-        }
-
-        [HttpGet("answer/{answerId}")]
-        public async Task<IActionResult> GetAllVotesByAnswerId(int answerId)
-        {
-            var votes = await _voteService.GetAllVotesByAnswerIdAsync(answerId);
-            return Ok(votes);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreateVote([FromBody] VoteForCreateDto voteCreateDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var createdVote = await _voteService.CreateVoteAsync(voteCreateDto);
-            return Ok();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteVote(int id)
-        {
-            var result = await _voteService.DeleteVoteAsync(id);
-            if (!result)
-            {
-                return NotFound();
-            }
-
-            return NoContent();
-        }
+        return Ok(result.Item2);
     }
 }

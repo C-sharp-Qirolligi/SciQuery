@@ -1,6 +1,9 @@
-using Bogus;
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SciQuery.Domain.UserModels;
@@ -30,15 +33,25 @@ builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 
+
 //Add Services
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IAnswerService, AnswerService>();
-builder.Services.AddScoped<IVoteService, VoteService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddAutoMapper(typeof(UserMappings).Assembly);
+builder.Services.AddScoped<IVoteService, VoteService>();    
+builder.Services.AddScoped<IReputationService, ReputationService>();
+builder.Services.AddScoped<INotificationService,NotificationService>();
+
+//SingleTon Servics
+builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
+builder.Services.AddSingleton<IFileManagingService, FileMangingService>();
+
+//Add automapper
+builder.Services.AddAutoMapper(typeof(NotificationMappings).Assembly); 
+
 //Identity Usermanager and rolemanager
 builder.Services.AddDbContext<SciQueryDbContext>();
 
@@ -90,12 +103,35 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters = new TokenValidationParameters()
         {
             ValidateIssuer = true,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
             ValidateAudience = true,
             ValidIssuer = issuer,
             ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
+            ClockSkew = TimeSpan.Zero
+        };
+
+        //To SignalR
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                // If the request is for our hub...
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/hubs/chat")))
+                {
+                    // Read the token out of the query string
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
+
 
 //Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -105,12 +141,13 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Jwt authorization header using the Bearer scheme. Example :\"Authorization : Bearer {token}\"",
-        Name = "Authoriation",
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization", // Corrected from "Authoriation"
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -119,13 +156,15 @@ builder.Services.AddSwaggerGen(options =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer",
-                }
-            }
-            ,new string[]{}
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new string[] {}
         }
     });
-
 });
 
 //Policies for Role requirements 
@@ -146,8 +185,12 @@ builder.Services.AddCors(options =>
         builder => builder
             .WithOrigins("http://localhost:5173")
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .SetIsOriginAllowed(x => true)
+            .AllowCredentials());
 });
+
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -177,12 +220,10 @@ using (var serviceScope = app.Services.CreateScope())
     {
         await roleManager.CreateAsync(new IdentityRole(AppRoles.User));
     }
-
     if (!await roleManager.RoleExistsAsync(AppRoles.Administrator))
     {
         await roleManager.CreateAsync(new IdentityRole(AppRoles.Administrator));
     }
-
     if (!await roleManager.RoleExistsAsync(AppRoles.Master))
     {
         await roleManager.CreateAsync(new IdentityRole(AppRoles.Master));
@@ -198,9 +239,12 @@ app.UseRouting();
 //and this
 app.UseCors("AllowLocalhost5173");
 
+
 app.UseAuthentication();
 
 app.UseAuthorization();
+app.UseStaticFiles();
+app.MapHub<NotificationHub>("api/notificationHub");
 
 app.MapControllers();
 
