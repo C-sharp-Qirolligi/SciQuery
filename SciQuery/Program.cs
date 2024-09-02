@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SciQuery.Domain.UserModels;
@@ -242,7 +243,7 @@ app.UseCors("AllowLocalhost5173");
 app.UseAuthentication();
 
 app.UseAuthorization();
-
+app.UseStaticFiles();
 app.MapHub<NotificationHub>("api/notificationHub");
 
 app.MapControllers();

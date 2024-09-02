@@ -178,6 +178,20 @@ public class QuestionService(SciQueryDbContext dbContext,
         
         question.UpdatedDate = DateTime.Now;
 
+        // Ensure the ImagePaths in the questionUpdateDto is not null
+        var updatedImagePaths = questionUpdateDto.ImagePaths ?? new List<string>();
+
+        // Get the images that need to be deleted
+        var imagesToDelete = question.ImagePaths
+            .Except(updatedImagePaths)
+            .ToList();
+
+        // Delete each image that is not in the updated list
+        foreach (var imagePath in imagesToDelete)
+        {
+            _fileManaging.DeleteFile(imagePath, "QuestionImages");
+        }
+
         //If question have a any question tags ,remove they. In end of method clear tags which have not any question tags!
         _context.QuestionTags.RemoveRange(question.QuestionTags.Where(x => !questionUpdateDto.Tags.Contains(x.Tag.Name)));
         _context.SaveChanges();

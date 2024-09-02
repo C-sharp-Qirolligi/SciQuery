@@ -68,7 +68,7 @@ public class FileMangingService(FileExtensionContentTypeProvider fileExtension) 
         var image = new ImageFile(bytes, contentType, Path.GetFileName(requestedFilePath));
         return image;
     }
-    public async Task<ImageFile> DeleteFileAsync(string fileName, string filePath)
+    public void DeleteFile(string fileName, string filePath)
     {
         var basePath = Path.Combine(Directory.GetCurrentDirectory(), "Source", "Images");
 
@@ -76,13 +76,16 @@ public class FileMangingService(FileExtensionContentTypeProvider fileExtension) 
 
         if (!File.Exists(requestedFilePath))
         {
-            requestedFilePath = filePath == "UserImages" ?
-                Path.Combine(basePath, "user.png") :
-                Path.Combine(basePath, "defaultImage.jpg");
+            return;
         }
-
-        
-        return ;
+        if (requestedFilePath.Contains("defaultImage") || requestedFilePath.Contains("user.png"))
+        {
+            return;
+        }
+        if(File.Exists(requestedFilePath))
+        {
+            File.Delete(requestedFilePath);
+        }
     }
 
 

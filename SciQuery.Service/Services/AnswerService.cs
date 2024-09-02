@@ -141,6 +141,20 @@ public class AnswerService(SciQueryDbContext context,
             ?? throw new EntityNotFoundException($"Answer with id : {id} is not found!");
         answer.UpdatedDate = DateTime.Now;
 
+        // Ensure the ImagePaths in the questionUpdateDto is not null
+        var updatedImagePaths = answerUpdateDto.ImagePaths ?? new List<string>();
+
+        // Get the images that need to be deleted
+        var imagesToDelete = answer.ImagePaths
+            .Except(updatedImagePaths)
+            .ToList();
+
+        // Delete each image that is not in the updated list
+        foreach (var imagePath in imagesToDelete)
+        {
+            _fileManaging.DeleteFile(imagePath, "AnswerImages");
+        }
+
         _mapper.Map(answerUpdateDto, answer);
         await _context.SaveChangesAsync();
     }
