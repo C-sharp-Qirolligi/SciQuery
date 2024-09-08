@@ -79,6 +79,7 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
     }
 
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<IActionResult> UpdateQuestion(int id, [FromBody] QuestionForUpdateDto questionDto)
     {
         if (!ModelState.IsValid)
@@ -92,6 +93,7 @@ public class QuestionsController(IQuestionService questionService, UserManager<U
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> DeleteQuestion(int id)
     {
         var result = await _questionService.DeleteAsync(id);
